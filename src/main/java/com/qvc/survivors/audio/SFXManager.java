@@ -1,5 +1,7 @@
 package com.qvc.survivors.audio;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.LineUnavailableException;
@@ -9,6 +11,11 @@ import org.slf4j.LoggerFactory;
 public class SFXManager {
     private static final Logger log = LoggerFactory.getLogger(SFXManager.class);
 
+    private final ExecutorService sfxPool = Executors.newFixedThreadPool(8, r -> {
+        Thread t = new Thread(r, "SFX-Playback");
+        t.setDaemon(true);
+        return t;
+    });
     private volatile double volume = 0.5;
     private volatile boolean enabled = true;
 
@@ -41,7 +48,7 @@ public class SFXManager {
     private void playBuffer(byte[] buffer) {
         if (!enabled || buffer == null) return;
         double vol = this.volume;
-        Thread t = new Thread(() -> {
+        sfxPool.submit(() -> {
             try {
                 SourceDataLine line = AudioSystem.getSourceDataLine(Synthesizer.FORMAT);
                 line.open(Synthesizer.FORMAT, 4096);
@@ -53,9 +60,7 @@ public class SFXManager {
             } catch (LineUnavailableException e) {
                 log.error("Failed to play SFX", e);
             }
-        }, "SFX-Playback");
-        t.setDaemon(true);
-        t.start();
+        });
     }
 
     // --- Public play methods ---

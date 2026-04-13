@@ -420,7 +420,7 @@ public class GameController {
                this.gameView.getParticleSystem().createDroneTrail(drone.getX(), drone.getY());
             }
          }
-         if (weapon.isReady()) {
+         if (!this.weaponsJammed && weapon.isReady()) {
             List<Projectile> newProjectiles = weapon.fire(
                     this.player.getX(), this.player.getY(),
                     this.player.getFacingAngle(),
@@ -819,7 +819,10 @@ public class GameController {
    }
 
    private void updateBossMechanics(double deltaTime) {
-      if (this.activeBoss == null || !this.activeBoss.isActive()) return;
+      if (this.activeBoss == null || !this.activeBoss.isActive()) {
+         this.weaponsJammed = false;
+         return;
+      }
 
       if (this.activeBoss instanceof ExecutiveProducer ep) {
          if (ep.isPendingSpawnRing()) {
@@ -1323,6 +1326,9 @@ public class GameController {
       double baseSpeed = this.player.getMovementComponent().getSpeed();
       this.player.getMovementComponent().setSpeed(baseSpeed * character.getSpeedMult());
 
+      double baseDamage = this.player.getStats().getStat(StatModifier.PACKAGE_DAMAGE);
+      this.player.getStats().getStats().put(StatModifier.PACKAGE_DAMAGE, baseDamage * character.getDamageMult());
+
       // Replace starting weapon with character's weapon
       if (!character.getStartingWeaponId().equals("package_launcher")) {
          // Clear default weapon and add character's weapon
@@ -1415,6 +1421,10 @@ public class GameController {
          this.damageNumbers.render(this.gameView.getGraphicsContext(), this.camera);
          this.gameView.renderParticles();
          this.hudView.render(this.player, this.waveManager.getCurrentWave(), this.currentZone);
+         if (this.weaponsJammed) {
+            double cx = this.gameView.getWidth() / 2.0;
+            this.gameView.drawText("WEAPONS JAMMED!", cx - 70, this.gameView.getHeight() / 2.0 - 30, Color.RED, 20);
+         }
          if (this.activeBoss != null && this.activeBoss.isActive()) {
             this.hudView.renderBossHealthBar(this.activeBoss);
          }

@@ -3,8 +3,10 @@ package com.qvc.survivors.util;
 import com.qvc.survivors.model.entity.Entity;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class SpatialGrid {
    private final int cellSize;
@@ -39,6 +41,7 @@ public class SpatialGrid {
 
    public List<Entity> query(Entity entity) {
       List<Entity> results = new ArrayList<>();
+      Set<Entity> seen = new HashSet<>();
       int minCellX = this.getCellX(entity.getX());
       int maxCellX = this.getCellX(entity.getX() + entity.getWidth());
       int minCellY = this.getCellY(entity.getY());
@@ -50,7 +53,7 @@ public class SpatialGrid {
             List<Entity> cellEntities = this.grid.get(key);
             if (cellEntities != null) {
                for (Entity e : cellEntities) {
-                  if (!results.contains(e) && e != entity) {
+                  if (e != entity && seen.add(e)) {
                      results.add(e);
                   }
                }

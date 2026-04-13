@@ -5,9 +5,12 @@ import com.qvc.survivors.model.entity.EnemyType;
 import com.qvc.survivors.world.MapCollectibleType;
 import com.qvc.survivors.world.TileMap;
 import com.qvc.survivors.world.TileType;
+import java.util.ArrayList;
+import java.util.List;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.effect.BlendMode;
+import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.RadialGradient;
@@ -36,6 +39,15 @@ public class GameView extends Canvas {
    private long cachedFrameTime;
    private Camera camera;
    private TileMap tileMap;
+   private WritableImage tileCache;
+   private int tileCacheFirstCol = -1;
+   private int tileCacheFirstRow = -1;
+   private int tileCacheLastCol = -1;
+   private int tileCacheLastRow = -1;
+   private WritableImage scanlineCache;
+   private int scanlineCacheWidth = -1;
+   private int scanlineCacheHeight = -1;
+   private final List<double[]> pendingGlows = new ArrayList<>();
 
    public GameView(int gridWidth, int gridHeight, double viewportWidth, double viewportHeight) {
       super(viewportWidth, viewportHeight);
@@ -55,11 +67,14 @@ public class GameView extends Canvas {
 
    public void setTileMap(TileMap tileMap) {
       this.tileMap = tileMap;
+      this.tileCache = null;
    }
 
    public void resizeCanvas(double width, double height) {
       this.setWidth(width);
       this.setHeight(height);
+      this.tileCache = null;
+      this.scanlineCache = null;
    }
 
    private void initializeNebulaGradients() {
@@ -80,12 +95,20 @@ public class GameView extends Canvas {
    }
 
    private void drawGlowEffect(double centerX, double centerY, Color color, double glowIntensity) {
+      pendingGlows.add(new double[]{centerX, centerY, color.getRed(), color.getGreen(), color.getBlue(), glowIntensity});
+   }
+
+   private void flushGlows() {
+      if (pendingGlows.isEmpty()) return;
       this.graphicsContext.save();
       this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
-      double glowRadius = 20.0 * glowIntensity;
-      this.graphicsContext.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), Math.min(0.15 * glowIntensity, 0.4)));
-      this.graphicsContext.fillOval(centerX - glowRadius, centerY - glowRadius, glowRadius * 2.0, glowRadius * 2.0);
+      for (double[] g : pendingGlows) {
+         double glowRadius = 20.0 * g[5];
+         this.graphicsContext.setFill(Color.color(g[2], g[3], g[4], Math.min(0.15 * g[5], 0.4)));
+         this.graphicsContext.fillOval(g[0] - glowRadius, g[1] - glowRadius, glowRadius * 2.0, glowRadius * 2.0);
+      }
       this.graphicsContext.restore();
+      pendingGlows.clear();
    }
 
    public void updateParticles(double deltaTime) {
@@ -155,13 +178,22 @@ public class GameView extends Canvas {
    }
 
    private void drawScanlines() {
-      this.graphicsContext.setStroke(Color.rgb(255, 255, 255, 0.015));
-      this.graphicsContext.setLineWidth(1.0);
-      double offset = this.animationTime * 30.0 % 4.0;
-
-      for (int i = 0; i < this.getHeight(); i += 4) {
-         this.graphicsContext.strokeLine(0.0, i + offset, this.getWidth(), i + offset);
+      int w = (int) this.getWidth();
+      int h = (int) this.getHeight();
+      if (w <= 0 || h <= 0) return;
+      if (this.scanlineCache == null || this.scanlineCacheWidth != w || this.scanlineCacheHeight != h) {
+         this.scanlineCacheWidth = w;
+         this.scanlineCacheHeight = h;
+         Canvas offscreen = new Canvas(w, h);
+         GraphicsContext ogc = offscreen.getGraphicsContext2D();
+         ogc.setStroke(Color.rgb(255, 255, 255, 0.015));
+         ogc.setLineWidth(1.0);
+         for (int i = 0; i < h; i += 4) {
+            ogc.strokeLine(0.0, i, w, i);
+         }
+         this.scanlineCache = offscreen.snapshot(null, null);
       }
+      this.graphicsContext.drawImage(this.scanlineCache, 0, 0);
    }
 
    private void drawTileMap() {
@@ -170,26 +202,52 @@ public class GameView extends Canvas {
       int firstRow = Math.max(0, (int) Math.floor(camera.screenToWorldY(0)));
       int lastRow = Math.min(this.tileMap.getHeight() - 1, (int) Math.ceil(camera.screenToWorldY(this.getHeight())));
 
-      for (int tx = firstCol; tx <= lastCol; tx++) {
-         for (int ty = firstRow; ty <= lastRow; ty++) {
-            TileType tile = this.tileMap.getTile(tx, ty);
-            double screenX = camera.worldToScreenX(tx);
-            double screenY = camera.worldToScreenY(ty);
+      boolean cacheValid = this.tileCache != null
+         && firstCol == this.tileCacheFirstCol
+         && firstRow == this.tileCacheFirstRow
+         && lastCol == this.tileCacheLastCol
+         && lastRow == this.tileCacheLastRow;
 
-            this.graphicsContext.setFill(tile.getBaseColor());
-            this.graphicsContext.fillRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
+      if (!cacheValid) {
+         this.tileCacheFirstCol = firstCol;
+         this.tileCacheFirstRow = firstRow;
+         this.tileCacheLastCol = lastCol;
+         this.tileCacheLastRow = lastRow;
 
-            if (tile == TileType.WALL) {
-               this.graphicsContext.setStroke(tile.getGridColor());
-               this.graphicsContext.setLineWidth(1.5);
-               this.graphicsContext.strokeRect(screenX + 0.5, screenY + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
-            } else {
-               this.graphicsContext.setStroke(tile.getGridColor());
-               this.graphicsContext.setLineWidth(0.5);
-               this.graphicsContext.strokeRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
+         int cols = lastCol - firstCol + 1;
+         int rows = lastRow - firstRow + 1;
+         if (cols <= 0 || rows <= 0) return;
+         int imgW = cols * TILE_SIZE;
+         int imgH = rows * TILE_SIZE;
+
+         Canvas offscreen = new Canvas(imgW, imgH);
+         GraphicsContext ogc = offscreen.getGraphicsContext2D();
+         ogc.setImageSmoothing(false);
+
+         for (int tx = firstCol; tx <= lastCol; tx++) {
+            for (int ty = firstRow; ty <= lastRow; ty++) {
+               TileType tile = this.tileMap.getTile(tx, ty);
+               double ox = (tx - firstCol) * TILE_SIZE;
+               double oy = (ty - firstRow) * TILE_SIZE;
+               ogc.setFill(tile.getBaseColor());
+               ogc.fillRect(ox, oy, TILE_SIZE, TILE_SIZE);
+               if (tile == TileType.WALL) {
+                  ogc.setStroke(tile.getGridColor());
+                  ogc.setLineWidth(1.5);
+                  ogc.strokeRect(ox + 0.5, oy + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
+               } else {
+                  ogc.setStroke(tile.getGridColor());
+                  ogc.setLineWidth(0.5);
+                  ogc.strokeRect(ox, oy, TILE_SIZE, TILE_SIZE);
+               }
             }
          }
+         this.tileCache = offscreen.snapshot(null, null);
       }
+
+      double screenX = camera.worldToScreenX(firstCol);
+      double screenY = camera.worldToScreenY(firstRow);
+      this.graphicsContext.drawImage(this.tileCache, screenX, screenY);
    }
 
    public void drawMapCollectible(double x, double y, MapCollectibleType type, double pulse) {
@@ -569,6 +627,10 @@ public class GameView extends Canvas {
 
    public void renderParticles() {
       this.particleSystem.render(this.graphicsContext, this.camera);
+   }
+
+   public void renderPendingGlows() {
+      this.flushGlows();
    }
 
    public int getTileSize() {

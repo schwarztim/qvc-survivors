@@ -146,13 +146,11 @@ public class ParticleSystem {
       for (Particle particle : this.particles) {
          if (particle.isActive()) {
             double alpha = particle.getAlpha();
-            Color renderColor = Color.rgb(
-               (int)(particle.getColor().getRed() * 255.0), (int)(particle.getColor().getGreen() * 255.0), (int)(particle.getColor().getBlue() * 255.0), alpha
-            );
+            gc.setGlobalAlpha(alpha);
             double screenX = camera.worldToScreenX(particle.getX());
             double screenY = camera.worldToScreenY(particle.getY());
             double size = particle.getSize();
-            gc.setFill(renderColor);
+            gc.setFill(particle.getColor());
             switch (particle.getType()) {
                case CIRCLE:
                   gc.fillOval(screenX - size / 2.0, screenY - size / 2.0, size, size);
@@ -172,7 +170,7 @@ public class ParticleSystem {
                   gc.fillRect(screenX - size * 1.5, screenY - size / 2.0, size * 3.0, size);
                   break;
                case RING:
-                  gc.setStroke(renderColor);
+                  gc.setStroke(particle.getColor());
                   gc.setLineWidth(2.0);
                   gc.strokeOval(screenX - size / 2.0, screenY - size / 2.0, size, size);
                   break;
@@ -182,6 +180,7 @@ public class ParticleSystem {
          }
       }
 
+      gc.setGlobalAlpha(1.0);
       gc.restore();
    }
 
