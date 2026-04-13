@@ -9,6 +9,9 @@ import com.qvc.survivors.engine.Camera;
 
 public class DamageNumberPool {
     private static final int MAX_NUMBERS = 50;
+    private static final Font FONT_12 = Font.font("Courier New", FontWeight.BOLD, 12);
+    private static final Font FONT_16 = Font.font("Courier New", FontWeight.BOLD, 16);
+    private static final Color SHADOW_BLACK = Color.color(0, 0, 0, 0.5);
     private final DamageNumber[] pool;
 
     public DamageNumberPool() {
@@ -51,17 +54,11 @@ public class DamageNumberPool {
             }
 
             Color baseColor = dn.getColor();
-            Color fadedColor = Color.rgb(
-                (int)(baseColor.getRed() * 255),
-                (int)(baseColor.getGreen() * 255),
-                (int)(baseColor.getBlue() * 255),
-                alpha
-            );
+            Color fadedColor = Color.color(baseColor.getRed(), baseColor.getGreen(), baseColor.getBlue(), alpha);
 
-            double fontSize = dn.getDamage() >= 50 ? 16 : 12;
-            gc.setFont(Font.font("Courier New", FontWeight.BOLD, fontSize));
+            gc.setFont(dn.getDamage() >= 50 ? FONT_16 : FONT_12);
             // Shadow
-            gc.setFill(Color.rgb(0, 0, 0, alpha * 0.5));
+            gc.setFill(Color.color(0, 0, 0, alpha * 0.5));
             gc.fillText(text, screenX + 1, screenY + 1);
             // Main text
             gc.setFill(fadedColor);

@@ -9,6 +9,16 @@ import javafx.scene.paint.Color;
 public class HUDView {
    private static final Color HUD_COLOR = Color.rgb(200, 220, 255);
    private static final Color ACCENT_COLOR = Color.rgb(100, 200, 255);
+   private static final Color BAR_BG_COLOR = Color.rgb(20, 20, 30);
+   private static final Color BOSS_BAR_RED = Color.rgb(255, 50, 50);
+   private static final Color BOSS_BAR_BG = Color.rgb(40, 10, 10);
+   private static final Color BOSS_BAR_OVERLAY = Color.rgb(0, 0, 0, 0.7);
+   private static final Color BOSS_NAME_COLOR = Color.rgb(255, 200, 200);
+   private static final Color TOP_CENTER_ZONE = Color.rgb(180, 200, 230, 0.6);
+   private static final Color TOP_CENTER_WEAPON = Color.rgb(100, 200, 255, 0.7);
+   private static final Color TOP_XP_BG = Color.rgb(30, 35, 50, 0.6);
+   private static final Color TOP_XP_FILL = Color.rgb(100, 200, 255, 0.8);
+   private static final Color SHIELD_BLUE = Color.rgb(100, 200, 255);
    private static final int FONT_SIZE = 14;
    private final GameView gameView;
 
@@ -37,10 +47,10 @@ public class HUDView {
       double barY = 10;
 
       // Background
-      this.gameView.drawBox(barX - 2, barY - 2, barWidth + 4, barHeight + 4, Color.TRANSPARENT, Color.rgb(0, 0, 0, 0.7));
+      this.gameView.drawBox(barX - 2, barY - 2, barWidth + 4, barHeight + 4, Color.TRANSPARENT, BOSS_BAR_OVERLAY);
 
       // Border
-      this.gameView.drawBox(barX, barY, barWidth, barHeight, Color.rgb(255, 50, 50), Color.rgb(40, 10, 10));
+      this.gameView.drawBox(barX, barY, barWidth, barHeight, BOSS_BAR_RED, BOSS_BAR_BG);
 
       // Health fill
       double maxHp;
@@ -54,11 +64,11 @@ public class HUDView {
       double fillWidth = barWidth * healthPercent;
 
       if (fillWidth > 0) {
-         Color barColor = healthPercent > 0.5 ? Color.rgb(255, 50, 50) : (healthPercent > 0.25 ? Color.ORANGE : Color.YELLOW);
+         Color barColor = healthPercent > 0.5 ? BOSS_BAR_RED : (healthPercent > 0.25 ? Color.ORANGE : Color.YELLOW);
          this.gameView.drawBox(barX, barY, fillWidth, barHeight, Color.TRANSPARENT, barColor);
          // Highlight
          this.gameView.drawBox(barX, barY, fillWidth, barHeight / 2.0, Color.TRANSPARENT,
-               Color.rgb((int)(barColor.getRed() * 255), (int)(barColor.getGreen() * 255), (int)(barColor.getBlue() * 255), 0.3));
+               Color.color(barColor.getRed(), barColor.getGreen(), barColor.getBlue(), 0.3));
       }
 
       // Boss name
@@ -66,7 +76,7 @@ public class HUDView {
       if (boss instanceof BoardOfDirectors bod) {
          bossName += " - " + bod.getSubBossName();
       }
-      this.gameView.drawText(bossName, barX + barWidth / 2.0 - bossName.length() * 4, barY + barHeight + 16, Color.rgb(255, 200, 200), 14);
+      this.gameView.drawText(bossName, barX + barWidth / 2.0 - bossName.length() * 4, barY + barHeight + 16, BOSS_NAME_COLOR, 14);
    }
 
    private void renderLeftHUD(Player player) {
@@ -94,15 +104,15 @@ public class HUDView {
       int barWidth = 200;
       int barHeight = 10;
       double pulse = 0.3 + 0.2 * Math.sin(System.currentTimeMillis() * 0.005);
-      Color glowColor = Color.rgb(100, 200, 255, pulse);
+      Color glowColor = Color.color(ACCENT_COLOR.getRed(), ACCENT_COLOR.getGreen(), ACCENT_COLOR.getBlue(), pulse);
       this.gameView.drawBox(x - 2, y - 2, barWidth + 4, barHeight + 4, Color.TRANSPARENT, glowColor);
-      this.gameView.drawBox(x, y, barWidth, barHeight, ACCENT_COLOR, Color.rgb(20, 20, 30));
+      this.gameView.drawBox(x, y, barWidth, barHeight, ACCENT_COLOR, BAR_BG_COLOR);
       double progress = player.getExperience() / player.getExperienceThreshold();
       int filledWidth = (int)(barWidth * Math.min(progress, 1.0));
       if (filledWidth > 0) {
          Color barColor = Color.hsb(System.currentTimeMillis() * 0.1 % 360.0, 0.6, 1.0);
          this.gameView.drawBox(x, y, filledWidth, barHeight, Color.TRANSPARENT, barColor);
-         Color brightGlow = Color.rgb((int)(barColor.getRed() * 255.0), (int)(barColor.getGreen() * 255.0), (int)(barColor.getBlue() * 255.0), 0.5);
+         Color brightGlow = Color.color(barColor.getRed(), barColor.getGreen(), barColor.getBlue(), 0.5);
          this.gameView.drawBox(x, y, filledWidth, barHeight / 2.0, Color.TRANSPARENT, brightGlow);
       }
    }
@@ -113,13 +123,13 @@ public class HUDView {
       // Zone name (small, top-center)
       if (currentZone != null) {
          String zoneName = currentZone.getDisplayName();
-         this.gameView.drawText(zoneName, centerX - zoneName.length() * 3.5, 18, Color.rgb(180, 200, 230, 0.6), 12);
+         this.gameView.drawText(zoneName, centerX - zoneName.length() * 3.5, 18, TOP_CENTER_ZONE, 12);
       }
 
       // Weapon count
       int weaponCount = player.getInventory().getWeapons().size();
       String weaponText = "Weapons: " + weaponCount + "/6";
-      this.gameView.drawText(weaponText, centerX - 50, 34, Color.rgb(100, 200, 255, 0.7), 11);
+      this.gameView.drawText(weaponText, centerX - 50, 34, TOP_CENTER_WEAPON, 11);
 
       // Prominent XP bar (top center, wider)
       int barWidth = 300;
@@ -128,10 +138,10 @@ public class HUDView {
       int barY = 40;
       double progress = player.getExperience() / player.getExperienceThreshold();
       progress = Math.min(progress, 1.0);
-      this.gameView.drawBox(barX, barY, barWidth, barHeight, Color.TRANSPARENT, Color.rgb(30, 35, 50, 0.6));
+      this.gameView.drawBox(barX, barY, barWidth, barHeight, Color.TRANSPARENT, TOP_XP_BG);
       int filledWidth = (int)(barWidth * progress);
       if (filledWidth > 0) {
-         this.gameView.drawBox(barX, barY, filledWidth, barHeight, Color.TRANSPARENT, Color.rgb(100, 200, 255, 0.8));
+         this.gameView.drawBox(barX, barY, filledWidth, barHeight, Color.TRANSPARENT, TOP_XP_FILL);
       }
    }
 

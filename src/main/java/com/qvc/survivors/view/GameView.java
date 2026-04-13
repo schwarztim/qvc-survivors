@@ -19,6 +19,12 @@ public class GameView extends Canvas {
    private static final int TILE_SIZE = 15;
    private static final Color BACKGROUND_COLOR = Color.rgb(20, 20, 25);
    private static final Color GRID_COLOR = Color.rgb(30, 35, 45, 0.3);
+   private static final Font FONT_COURIER_15 = Font.font("Courier New", FontWeight.BOLD, 15.0);
+   private static final Font FONT_ARIAL_10 = Font.font("Arial", FontWeight.BOLD, 10.0);
+   private static final java.util.Map<Integer, Font> fontCache = new java.util.concurrent.ConcurrentHashMap<>();
+   private static Font getCachedFont(int size) {
+      return fontCache.computeIfAbsent(size, s -> Font.font("Courier New", FontWeight.BOLD, s));
+   }
    private final int gridWidth;
    private final int gridHeight;
    private final GraphicsContext graphicsContext;
@@ -37,8 +43,7 @@ public class GameView extends Canvas {
       this.graphicsContext = this.getGraphicsContext2D();
       this.particleSystem = new ParticleSystem(2000);
       this.animationTime = 0.0;
-      Font font = Font.font("Courier New", FontWeight.BOLD, 15.0);
-      this.graphicsContext.setFont(font);
+      this.graphicsContext.setFont(FONT_COURIER_15);
       this.graphicsContext.setImageSmoothing(false);
       this.initializeNebulaGradients();
    }
@@ -76,21 +81,8 @@ public class GameView extends Canvas {
    private void drawGlowEffect(double centerX, double centerY, Color color, double glowIntensity) {
       this.graphicsContext.save();
       this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
-      double glowRadius = 30.0 * glowIntensity;
-      RadialGradient gradient = new RadialGradient(
-         0.0,
-         0.0,
-         centerX,
-         centerY,
-         glowRadius,
-         false,
-         CycleMethod.NO_CYCLE,
-         new Stop[]{
-            new Stop(0.0, Color.rgb((int)(color.getRed() * 255.0), (int)(color.getGreen() * 255.0), (int)(color.getBlue() * 255.0), 0.3 * glowIntensity)),
-            new Stop(1.0, Color.TRANSPARENT)
-         }
-      );
-      this.graphicsContext.setFill(gradient);
+      double glowRadius = 20.0 * glowIntensity;
+      this.graphicsContext.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), Math.min(0.15 * glowIntensity, 0.4)));
       this.graphicsContext.fillOval(centerX - glowRadius, centerY - glowRadius, glowRadius * 2.0, glowRadius * 2.0);
       this.graphicsContext.restore();
    }
@@ -207,18 +199,7 @@ public class GameView extends Canvas {
       Color color = type.getColor();
 
       // Glow
-      this.graphicsContext.save();
-      this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
-      double glowRadius = 25.0 * (0.8 + pulse * 0.4);
-      RadialGradient gradient = new RadialGradient(0.0, 0.0, centerX, centerY, glowRadius, false,
-         CycleMethod.NO_CYCLE,
-         new Stop[]{
-            new Stop(0.0, Color.rgb((int)(color.getRed() * 255), (int)(color.getGreen() * 255), (int)(color.getBlue() * 255), 0.35)),
-            new Stop(1.0, Color.TRANSPARENT)
-         });
-      this.graphicsContext.setFill(gradient);
-      this.graphicsContext.fillOval(centerX - glowRadius, centerY - glowRadius, glowRadius * 2.0, glowRadius * 2.0);
-      this.graphicsContext.restore();
+      this.drawGlowEffect(centerX, centerY, color, 0.8 + pulse * 0.4);
 
       double size = 10.0;
       double scale = 1.0 + Math.sin(pulse * 3.0) * 0.15;
@@ -278,25 +259,7 @@ public class GameView extends Canvas {
       double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + 7.5;
       double centerY = pixelY + 7.5;
-      this.graphicsContext.save();
-      this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
-      double glowRadius = 30.0 * glowIntensity;
-      RadialGradient gradient = new RadialGradient(
-         0.0,
-         0.0,
-         centerX,
-         centerY,
-         glowRadius,
-         false,
-         CycleMethod.NO_CYCLE,
-         new Stop[]{
-            new Stop(0.0, Color.rgb((int)(color.getRed() * 255.0), (int)(color.getGreen() * 255.0), (int)(color.getBlue() * 255.0), 0.3 * glowIntensity)),
-            new Stop(1.0, Color.TRANSPARENT)
-         }
-      );
-      this.graphicsContext.setFill(gradient);
-      this.graphicsContext.fillOval(centerX - glowRadius, centerY - glowRadius, glowRadius * 2.0, glowRadius * 2.0);
-      this.graphicsContext.restore();
+      this.drawGlowEffect(centerX, centerY, color, glowIntensity);
       double size = 13.5;
       this.graphicsContext.save();
       this.graphicsContext.translate(centerX, centerY);
@@ -325,25 +288,7 @@ public class GameView extends Canvas {
       double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + 7.5;
       double centerY = pixelY + 7.5;
-      this.graphicsContext.save();
-      this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
-      double glowRadius = 30.0 * glowIntensity;
-      RadialGradient gradient = new RadialGradient(
-         0.0,
-         0.0,
-         centerX,
-         centerY,
-         glowRadius,
-         false,
-         CycleMethod.NO_CYCLE,
-         new Stop[]{
-            new Stop(0.0, Color.rgb((int)(color.getRed() * 255.0), (int)(color.getGreen() * 255.0), (int)(color.getBlue() * 255.0), 0.3 * glowIntensity)),
-            new Stop(1.0, Color.TRANSPARENT)
-         }
-      );
-      this.graphicsContext.setFill(gradient);
-      this.graphicsContext.fillOval(centerX - glowRadius, centerY - glowRadius, glowRadius * 2.0, glowRadius * 2.0);
-      this.graphicsContext.restore();
+      this.drawGlowEffect(centerX, centerY, color, glowIntensity);
       double size = isVIP ? 16.5 : 12.75;
       this.graphicsContext.save();
       this.graphicsContext.translate(centerX, centerY);
@@ -399,25 +344,7 @@ public class GameView extends Canvas {
       double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + 7.5;
       double centerY = pixelY + 7.5;
-      this.graphicsContext.save();
-      this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
-      double glowRadius = 30.0 * glowIntensity;
-      RadialGradient gradient = new RadialGradient(
-         0.0,
-         0.0,
-         centerX,
-         centerY,
-         glowRadius,
-         false,
-         CycleMethod.NO_CYCLE,
-         new Stop[]{
-            new Stop(0.0, Color.rgb((int)(color.getRed() * 255.0), (int)(color.getGreen() * 255.0), (int)(color.getBlue() * 255.0), 0.3 * glowIntensity)),
-            new Stop(1.0, Color.TRANSPARENT)
-         }
-      );
-      this.graphicsContext.setFill(gradient);
-      this.graphicsContext.fillOval(centerX - glowRadius, centerY - glowRadius, glowRadius * 2.0, glowRadius * 2.0);
-      this.graphicsContext.restore();
+      this.drawGlowEffect(centerX, centerY, color, glowIntensity);
       double size = 10.5;
       double rotation = this.cachedFrameTime * 0.01;
       this.graphicsContext.save();
@@ -458,25 +385,7 @@ public class GameView extends Canvas {
       double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + 7.5;
       double centerY = pixelY + 7.5;
-      this.graphicsContext.save();
-      this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
-      double glowRadius = 30.0 * glowIntensity;
-      RadialGradient gradient = new RadialGradient(
-         0.0,
-         0.0,
-         centerX,
-         centerY,
-         glowRadius,
-         false,
-         CycleMethod.NO_CYCLE,
-         new Stop[]{
-            new Stop(0.0, Color.rgb((int)(color.getRed() * 255.0), (int)(color.getGreen() * 255.0), (int)(color.getBlue() * 255.0), 0.3 * glowIntensity)),
-            new Stop(1.0, Color.TRANSPARENT)
-         }
-      );
-      this.graphicsContext.setFill(gradient);
-      this.graphicsContext.fillOval(centerX - glowRadius, centerY - glowRadius, glowRadius * 2.0, glowRadius * 2.0);
-      this.graphicsContext.restore();
+      this.drawGlowEffect(centerX, centerY, color, glowIntensity);
       double size = 9.0;
       double pulse = this.cachedFrameTime * 0.005;
       double scale = 1.0 + Math.sin(pulse) * 0.2;
@@ -524,7 +433,7 @@ public class GameView extends Canvas {
          this.graphicsContext.setLineWidth(2.0);
          this.graphicsContext.strokeOval(-size / 2.0, -size / 2.0, size, size);
          this.graphicsContext.setFill(color.brighter());
-         this.graphicsContext.setFont(Font.font("Arial", FontWeight.BOLD, 10.0));
+         this.graphicsContext.setFont(FONT_ARIAL_10);
          this.graphicsContext.fillText("$", -3.75, 3.75);
       }
 
@@ -624,8 +533,8 @@ public class GameView extends Canvas {
 
    public void drawText(String text, double x, double y, Color color, int fontSize) {
       Font originalFont = this.graphicsContext.getFont();
-      this.graphicsContext.setFont(Font.font("Courier New", FontWeight.BOLD, fontSize));
-      this.graphicsContext.setFill(Color.rgb((int)(color.getRed() * 255.0), (int)(color.getGreen() * 255.0), (int)(color.getBlue() * 255.0), 0.2));
+      this.graphicsContext.setFont(getCachedFont(fontSize));
+      this.graphicsContext.setFill(Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.2));
       this.graphicsContext.fillText(text, x + 1.0, y + 1.0);
       this.graphicsContext.setFill(color);
       this.graphicsContext.fillText(text, x, y);
@@ -793,8 +702,7 @@ public class GameView extends Canvas {
             this.graphicsContext.strokeRect(-boxSize/2, -boxSize/2, boxSize, boxSize);
             // Question mark
             this.graphicsContext.setFill(Color.WHITE);
-            Font qFont = Font.font("Courier New", FontWeight.BOLD, (int)(boxSize * 0.5));
-            this.graphicsContext.setFont(qFont);
+            this.graphicsContext.setFont(getCachedFont((int)(boxSize * 0.5)));
             this.graphicsContext.fillText("?", -boxSize * 0.15, boxSize * 0.15);
             break;
 
@@ -833,17 +741,7 @@ public class GameView extends Canvas {
       double baseSize = 30.0;
 
       // Large glow
-      this.graphicsContext.save();
-      this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
-      double glowRadius = 50.0 * glowIntensity;
-      RadialGradient gradient = new RadialGradient(0, 0, centerX, centerY, glowRadius, false, CycleMethod.NO_CYCLE,
-         new Stop[]{
-            new Stop(0.0, Color.rgb((int)(color.getRed()*255), (int)(color.getGreen()*255), (int)(color.getBlue()*255), 0.4 * glowIntensity)),
-            new Stop(1.0, Color.TRANSPARENT)
-         });
-      this.graphicsContext.setFill(gradient);
-      this.graphicsContext.fillOval(centerX - glowRadius, centerY - glowRadius, glowRadius * 2, glowRadius * 2);
-      this.graphicsContext.restore();
+      this.drawGlowEffect(centerX, centerY, color, glowIntensity);
 
       this.graphicsContext.save();
       this.graphicsContext.translate(centerX, centerY);

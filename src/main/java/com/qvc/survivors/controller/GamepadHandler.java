@@ -118,9 +118,9 @@ public class GamepadHandler {
         prevB = buttonB;
         prevStart = buttonStart;
 
-        // Read HID report (non-blocking)
+        // Read HID report (non-blocking, 0ms timeout)
         byte[] report = new byte[64];
-        int bytesRead = device.read(report, 50);
+        int bytesRead = device.read(report, 0);
         if (bytesRead < 0) {
             log.info("Gamepad disconnected");
             device.close();
