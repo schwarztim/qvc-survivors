@@ -1519,7 +1519,7 @@ public class GameController {
                boolean hasShield = et == EnemyType.RETURN_FRAUDSTER && !ge.isShieldBroken();
                double shieldPercent = hasShield ? ge.getShieldHealth() / 10.0 : 0.0;
                this.gameView.drawGenericEnemy(ge.getX(), ge.getY(), enemyColor, 0.8,
-                  et.getBehaviorId(), et.getSize(), hasShield, shieldPercent);
+                  et, et.getSize(), hasShield, shieldPercent);
             } else {
                Color enemyColor;
                if (enemy.isDamageFlashing()) {

@@ -1,6 +1,7 @@
 package com.qvc.survivors.view;
 
 import com.qvc.survivors.engine.Camera;
+import com.qvc.survivors.model.entity.EnemyType;
 import com.qvc.survivors.world.MapCollectibleType;
 import com.qvc.survivors.world.TileMap;
 import com.qvc.survivors.world.TileType;
@@ -601,132 +602,293 @@ public class GameView extends Canvas {
       return this.camera;
    }
 
-   public void drawGenericEnemy(double x, double y, Color color, double glowIntensity, String behaviorId, double size, boolean hasShield, double shieldPercent) {
+   public void drawGenericEnemy(double x, double y, Color color, double glowIntensity, EnemyType enemyType, double size, boolean hasShield, double shieldPercent) {
       double pixelX = camera.worldToScreenX(x);
       double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + TILE_SIZE_HALF;
       double centerY = pixelY + TILE_SIZE_HALF;
-      double drawSize = size * (TILE_SIZE / 1.8) * 0.75;
+      double s = size * (TILE_SIZE / 1.8) * 0.75;
 
-      // Glow
       this.drawGlowEffect(centerX, centerY, color, glowIntensity);
-
       this.graphicsContext.save();
       this.graphicsContext.translate(centerX, centerY);
 
-      switch (behaviorId) {
-         case "charge": // Karen - angular, angry
+      switch (enemyType) {
+         case REGULAR_CUSTOMER -> {
+            // Small person with shopping bag - orange
+            double headR = s * 0.25;
+            this.graphicsContext.setFill(color.darker());
+            this.graphicsContext.fillOval(-headR, -s/2, headR * 2, headR * 2); // head
+            this.graphicsContext.fillRect(-s * 0.2, -s/2 + headR * 2, s * 0.4, s * 0.45); // body
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeOval(-headR, -s/2, headR * 2, headR * 2);
+            // Legs
+            this.graphicsContext.strokeLine(-s * 0.1, -s/2 + headR * 2 + s * 0.45, -s * 0.15, s/2);
+            this.graphicsContext.strokeLine(s * 0.1, -s/2 + headR * 2 + s * 0.45, s * 0.15, s/2);
+            // Shopping bag (right side)
+            this.graphicsContext.setFill(color.brighter());
+            this.graphicsContext.fillRect(s * 0.2, -s * 0.05, s * 0.3, s * 0.35);
+            this.graphicsContext.setStroke(color.brighter().brighter());
+            this.graphicsContext.setLineWidth(1.0);
+            this.graphicsContext.strokeLine(s * 0.25, -s * 0.05, s * 0.35, -s * 0.15); // bag handle
+         }
+
+         case VIP_CUSTOMER -> {
+            // Taller figure with crown and multiple bags - red
+            double headR = s * 0.22;
+            this.graphicsContext.setFill(color.darker());
+            this.graphicsContext.fillOval(-headR, -s * 0.45, headR * 2, headR * 2); // head
+            this.graphicsContext.fillRect(-s * 0.22, -s * 0.45 + headR * 2, s * 0.44, s * 0.5); // body
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeOval(-headR, -s * 0.45, headR * 2, headR * 2);
+            // Legs
+            this.graphicsContext.strokeLine(-s * 0.1, s * 0.05 + s * 0.15, -s * 0.15, s/2);
+            this.graphicsContext.strokeLine(s * 0.1, s * 0.05 + s * 0.15, s * 0.15, s/2);
+            // Crown (gold)
+            double crownW = s * 0.35;
+            double crownH = s * 0.18;
+            this.graphicsContext.setFill(Color.GOLD);
+            this.graphicsContext.fillPolygon(
+               new double[]{-crownW/2, -crownW/4, 0, crownW/4, crownW/2},
+               new double[]{-s * 0.45, -s * 0.45 - crownH, -s * 0.45, -s * 0.45 - crownH, -s * 0.45}, 5);
+            // Two bags
+            this.graphicsContext.setFill(color.brighter());
+            this.graphicsContext.fillRect(-s * 0.45, 0, s * 0.2, s * 0.3);
+            this.graphicsContext.fillRect(s * 0.25, -s * 0.05, s * 0.2, s * 0.3);
+         }
+
+         case KAREN -> {
+            // Angular Karen haircut + pointing finger - reddish
+            double headR = s * 0.25;
+            this.graphicsContext.setFill(color.darker());
+            this.graphicsContext.fillOval(-headR, -s * 0.3, headR * 2, headR * 2); // head
+            this.graphicsContext.fillRect(-s * 0.2, -s * 0.3 + headR * 2, s * 0.4, s * 0.4); // body
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeOval(-headR, -s * 0.3, headR * 2, headR * 2);
+            // Big angular Karen hair (triangle spikes on top)
             this.graphicsContext.setFill(color.darker().darker());
-            double[] kxPts = {0, drawSize/2, drawSize/4, -drawSize/4, -drawSize/2};
-            double[] kyPts = {-drawSize/2, drawSize/4, drawSize/2, drawSize/2, drawSize/4};
-            this.graphicsContext.fillPolygon(kxPts, kyPts, 5);
+            this.graphicsContext.fillPolygon(
+               new double[]{-headR - 3, -headR/2, 0, headR/2, headR + 3},
+               new double[]{-s * 0.3, -s * 0.55, -s * 0.4, -s * 0.55, -s * 0.3}, 5);
+            // Angry eyebrows
+            this.graphicsContext.setStroke(Color.WHITE);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeLine(-headR * 0.6, -s * 0.22, -headR * 0.1, -s * 0.18);
+            this.graphicsContext.strokeLine(headR * 0.6, -s * 0.22, headR * 0.1, -s * 0.18);
+            // Pointing arm
             this.graphicsContext.setStroke(color);
             this.graphicsContext.setLineWidth(2.0);
-            this.graphicsContext.strokePolygon(kxPts, kyPts, 5);
-            // Angry eyes
-            this.graphicsContext.setFill(Color.WHITE);
-            this.graphicsContext.fillOval(-drawSize/4-2, -drawSize/8, 4, 3);
-            this.graphicsContext.fillOval(drawSize/4-2, -drawSize/8, 4, 3);
-            // Angry brow lines
-            this.graphicsContext.setStroke(color.darker().darker());
-            this.graphicsContext.setLineWidth(1.5);
-            this.graphicsContext.strokeLine(-drawSize/3, -drawSize/4, -drawSize/8, -drawSize/6);
-            this.graphicsContext.strokeLine(drawSize/3, -drawSize/4, drawSize/8, -drawSize/6);
-            break;
+            this.graphicsContext.strokeLine(s * 0.2, -s * 0.05, s * 0.5, -s * 0.2);
+            // Legs
+            this.graphicsContext.strokeLine(-s * 0.1, -s * 0.3 + headR * 2 + s * 0.4, -s * 0.12, s/2);
+            this.graphicsContext.strokeLine(s * 0.1, -s * 0.3 + headR * 2 + s * 0.4, s * 0.12, s/2);
+         }
 
-         case "swarm": // Coupon Clipper - small, circular clusters
+         case COUPON_CLIPPER -> {
+            // Small hunched figure with scissors - yellowish
+            double headR = s * 0.2;
             this.graphicsContext.setFill(color.darker());
-            this.graphicsContext.fillOval(-drawSize/2, -drawSize/2, drawSize, drawSize);
+            this.graphicsContext.fillOval(-headR, -s * 0.35, headR * 2, headR * 2); // head
+            // Hunched body (tilted)
+            this.graphicsContext.fillRect(-s * 0.2, -s * 0.35 + headR * 2 - 1, s * 0.35, s * 0.4);
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(1.0);
+            this.graphicsContext.strokeOval(-headR, -s * 0.35, headR * 2, headR * 2);
+            // Scissors shape (X with circles at ends)
+            this.graphicsContext.setStroke(color.brighter());
+            this.graphicsContext.setLineWidth(2.0);
+            this.graphicsContext.strokeLine(s * 0.15, -s * 0.1, s * 0.4, -s * 0.25);
+            this.graphicsContext.strokeLine(s * 0.15, -s * 0.1, s * 0.4, s * 0.05);
+            this.graphicsContext.strokeOval(s * 0.38, -s * 0.3, 4, 4);
+            this.graphicsContext.strokeOval(s * 0.38, s * 0.02, 4, 4);
+            // Legs
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(1.0);
+            this.graphicsContext.strokeLine(-s * 0.05, s * 0.05 + s * 0.1, -s * 0.1, s/2);
+            this.graphicsContext.strokeLine(s * 0.1, s * 0.05 + s * 0.1, s * 0.05, s/2);
+         }
+
+         case CART_PUSHER -> {
+            // Wide figure pushing shopping cart ahead - brown
+            double headR = s * 0.2;
+            this.graphicsContext.setFill(color.darker());
+            this.graphicsContext.fillOval(-headR - s * 0.15, -s * 0.4, headR * 2, headR * 2); // head (offset left)
+            this.graphicsContext.fillRect(-s * 0.35, -s * 0.4 + headR * 2, s * 0.4, s * 0.45); // wide body
             this.graphicsContext.setStroke(color);
             this.graphicsContext.setLineWidth(1.5);
-            this.graphicsContext.strokeOval(-drawSize/2, -drawSize/2, drawSize, drawSize);
-            // Scissors icon
-            this.graphicsContext.setStroke(color.brighter());
-            this.graphicsContext.strokeLine(-drawSize/4, -drawSize/6, drawSize/4, drawSize/6);
-            this.graphicsContext.strokeLine(drawSize/4, -drawSize/6, -drawSize/4, drawSize/6);
-            break;
+            this.graphicsContext.strokeOval(-headR - s * 0.15, -s * 0.4, headR * 2, headR * 2);
+            // Shopping cart (rectangle with wheels)
+            this.graphicsContext.setStroke(Color.SILVER);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeRect(s * 0.05, -s * 0.2, s * 0.4, s * 0.35);
+            // Cart wheels
+            this.graphicsContext.setFill(Color.GRAY);
+            this.graphicsContext.fillOval(s * 0.1, s * 0.15, 3, 3);
+            this.graphicsContext.fillOval(s * 0.35, s * 0.15, 3, 3);
+            // Arms pushing cart
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeLine(s * 0.05, -s * 0.1, s * 0.05, -s * 0.2);
+            // Legs
+            this.graphicsContext.strokeLine(-s * 0.25, s * 0.05 + s * 0.1, -s * 0.3, s/2);
+            this.graphicsContext.strokeLine(-s * 0.1, s * 0.05 + s * 0.1, -s * 0.05, s/2);
+         }
 
-         case "teleport": // Scalper Bot - glitchy/digital
-            double flicker = (this.cachedFrameTime % 200 < 50) ? 0.3 : 1.0;
+         case SCALPER_BOT -> {
+            // Robotic angular figure with antenna - cyan
+            double flicker = (this.cachedFrameTime % 200 < 50) ? 0.7 : 1.0;
             this.graphicsContext.setGlobalAlpha(flicker);
+            // Square head
             this.graphicsContext.setFill(color.darker());
-            this.graphicsContext.fillRect(-drawSize/2, -drawSize/2, drawSize, drawSize);
+            this.graphicsContext.fillRect(-s * 0.2, -s * 0.45, s * 0.4, s * 0.3);
+            // Rectangular body
+            this.graphicsContext.fillRect(-s * 0.25, -s * 0.15, s * 0.5, s * 0.4);
             this.graphicsContext.setStroke(color.brighter());
             this.graphicsContext.setLineWidth(1.5);
-            this.graphicsContext.strokeRect(-drawSize/2, -drawSize/2, drawSize, drawSize);
-            // Digital lines
-            this.graphicsContext.setStroke(color);
-            this.graphicsContext.strokeLine(-drawSize/3, 0, drawSize/3, 0);
-            this.graphicsContext.strokeLine(0, -drawSize/3, 0, drawSize/3);
+            this.graphicsContext.strokeRect(-s * 0.2, -s * 0.45, s * 0.4, s * 0.3);
+            this.graphicsContext.strokeRect(-s * 0.25, -s * 0.15, s * 0.5, s * 0.4);
+            // Antenna
+            this.graphicsContext.strokeLine(0, -s * 0.45, 0, -s * 0.6);
+            this.graphicsContext.setFill(Color.RED);
+            this.graphicsContext.fillOval(-2, -s * 0.63, 4, 4); // antenna tip
+            // Glowing eyes
+            this.graphicsContext.setFill(Color.rgb(0, 255, 255));
+            this.graphicsContext.fillRect(-s * 0.12, -s * 0.38, s * 0.08, s * 0.06);
+            this.graphicsContext.fillRect(s * 0.04, -s * 0.38, s * 0.08, s * 0.06);
+            // Block legs
+            this.graphicsContext.setFill(color.darker());
+            this.graphicsContext.fillRect(-s * 0.2, s * 0.25, s * 0.15, s * 0.2);
+            this.graphicsContext.fillRect(s * 0.05, s * 0.25, s * 0.15, s * 0.2);
             this.graphicsContext.setGlobalAlpha(1.0);
-            break;
+         }
 
-         case "circle": // Influencer - glowing aura, recording dot
-            double auraSize = drawSize * 1.3;
-            this.graphicsContext.setGlobalAlpha(0.2);
+         case INFLUENCER -> {
+            // Figure holding phone/selfie stick - pink
+            double headR = s * 0.22;
+            this.graphicsContext.setFill(color.darker());
+            this.graphicsContext.fillOval(-headR, -s * 0.4, headR * 2, headR * 2); // head
+            this.graphicsContext.fillRect(-s * 0.18, -s * 0.4 + headR * 2, s * 0.36, s * 0.4); // body
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeOval(-headR, -s * 0.4, headR * 2, headR * 2);
+            // Selfie stick + phone (rectangle held up)
+            this.graphicsContext.setStroke(Color.SILVER);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeLine(s * 0.18, -s * 0.15, s * 0.4, -s * 0.45); // stick
+            this.graphicsContext.setFill(Color.rgb(60, 60, 80));
+            this.graphicsContext.fillRect(s * 0.32, -s * 0.58, s * 0.18, s * 0.25); // phone
+            this.graphicsContext.setFill(Color.rgb(100, 180, 255));
+            this.graphicsContext.fillRect(s * 0.34, -s * 0.55, s * 0.14, s * 0.18); // phone screen
+            // Pink aura
+            double auraSize = s * 1.2;
+            this.graphicsContext.setGlobalAlpha(0.15);
             this.graphicsContext.setFill(color);
             this.graphicsContext.fillOval(-auraSize/2, -auraSize/2, auraSize, auraSize);
             this.graphicsContext.setGlobalAlpha(1.0);
-            this.graphicsContext.setFill(color.darker());
-            this.graphicsContext.fillOval(-drawSize/2, -drawSize/2, drawSize, drawSize);
-            this.graphicsContext.setStroke(color);
-            this.graphicsContext.setLineWidth(2.0);
-            this.graphicsContext.strokeOval(-drawSize/2, -drawSize/2, drawSize, drawSize);
-            // Recording dot (red)
+            // Recording dot
             this.graphicsContext.setFill(Color.RED);
             double recPulse = Math.sin(this.cachedFrameTime * 0.005) > 0 ? 1.0 : 0.3;
             this.graphicsContext.setGlobalAlpha(recPulse);
-            this.graphicsContext.fillOval(drawSize/3, -drawSize/2, 4, 4);
+            this.graphicsContext.fillOval(s * 0.36, -s * 0.6, 3, 3);
             this.graphicsContext.setGlobalAlpha(1.0);
-            break;
+            // Legs
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.strokeLine(-s * 0.08, s * 0.0 + s * 0.1, -s * 0.12, s/2);
+            this.graphicsContext.strokeLine(s * 0.08, s * 0.0 + s * 0.1, s * 0.12, s/2);
+         }
 
-         case "ranged": // QVC Superfan - small with throwing arm
+         case RETURN_FRAUDSTER -> {
+            // Figure carrying box with return arrow - brown
+            double headR = s * 0.22;
             this.graphicsContext.setFill(color.darker());
-            this.graphicsContext.fillOval(-drawSize/2, -drawSize/2, drawSize, drawSize);
+            this.graphicsContext.fillOval(-headR, -s * 0.4, headR * 2, headR * 2); // head
+            this.graphicsContext.fillRect(-s * 0.2, -s * 0.4 + headR * 2, s * 0.4, s * 0.42); // body
             this.graphicsContext.setStroke(color);
             this.graphicsContext.setLineWidth(1.5);
-            this.graphicsContext.strokeOval(-drawSize/2, -drawSize/2, drawSize, drawSize);
-            // Arm/throwing indicator
+            this.graphicsContext.strokeOval(-headR, -s * 0.4, headR * 2, headR * 2);
+            // Box being carried
+            this.graphicsContext.setFill(Color.rgb(180, 150, 100));
+            this.graphicsContext.fillRect(-s * 0.3, -s * 0.12, s * 0.6, s * 0.3);
+            this.graphicsContext.setStroke(Color.rgb(140, 110, 70));
+            this.graphicsContext.setLineWidth(1.0);
+            this.graphicsContext.strokeRect(-s * 0.3, -s * 0.12, s * 0.6, s * 0.3);
+            // Return arrow on box (curved arrow)
+            this.graphicsContext.setStroke(Color.RED);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeLine(-s * 0.1, 0, s * 0.1, 0);
+            this.graphicsContext.strokeLine(s * 0.05, -s * 0.05, s * 0.1, 0);
+            this.graphicsContext.strokeLine(s * 0.05, s * 0.05, s * 0.1, 0);
+            // Legs
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.strokeLine(-s * 0.1, s * 0.02 + s * 0.2, -s * 0.12, s/2);
+            this.graphicsContext.strokeLine(s * 0.1, s * 0.02 + s * 0.2, s * 0.12, s/2);
+         }
+
+         case QVC_SUPERFAN -> {
+            // Figure with headset, waving - gold
+            double headR = s * 0.23;
+            this.graphicsContext.setFill(color.darker());
+            this.graphicsContext.fillOval(-headR, -s * 0.4, headR * 2, headR * 2); // head
+            this.graphicsContext.fillRect(-s * 0.18, -s * 0.4 + headR * 2, s * 0.36, s * 0.4); // body
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeOval(-headR, -s * 0.4, headR * 2, headR * 2);
+            // Headset (arc over head + mic)
+            this.graphicsContext.setStroke(Color.rgb(80, 80, 80));
+            this.graphicsContext.setLineWidth(2.0);
+            this.graphicsContext.strokeArc(-headR - 2, -s * 0.5, headR * 2 + 4, headR * 1.5,
+               0, 180, javafx.scene.shape.ArcType.OPEN);
+            this.graphicsContext.setFill(Color.rgb(80, 80, 80));
+            this.graphicsContext.fillOval(-headR - 3, -s * 0.3, 4, 6); // earpiece
+            // Mic boom
+            this.graphicsContext.setStroke(Color.DARKGRAY);
+            this.graphicsContext.setLineWidth(1.0);
+            this.graphicsContext.strokeLine(-headR - 1, -s * 0.24, -headR + 3, -s * 0.15);
+            // Waving arm
             this.graphicsContext.setStroke(color.brighter());
             this.graphicsContext.setLineWidth(2.0);
-            this.graphicsContext.strokeLine(drawSize/3, 0, drawSize/2 + 3, -drawSize/4);
-            break;
+            double wave = Math.sin(this.cachedFrameTime * 0.008) * s * 0.1;
+            this.graphicsContext.strokeLine(s * 0.18, -s * 0.1, s * 0.4, -s * 0.35 + wave);
+            // Legs
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeLine(-s * 0.08, s * 0.0 + s * 0.1, -s * 0.12, s/2);
+            this.graphicsContext.strokeLine(s * 0.08, s * 0.0 + s * 0.1, s * 0.12, s/2);
+         }
 
-         case "stationary": // Mystery Box - pulsating box
-            double boxPulse = 1.0 + Math.sin(this.cachedFrameTime * 0.004) * 0.15;
-            double boxSize = drawSize * boxPulse;
+         case MYSTERY_BOX -> {
+            // Wrapped gift box with "?" and bow - purple
+            double boxPulse = 1.0 + Math.sin(this.cachedFrameTime * 0.004) * 0.12;
+            double bs = s * boxPulse;
             this.graphicsContext.setFill(color.darker());
-            this.graphicsContext.fillRect(-boxSize/2, -boxSize/2, boxSize, boxSize);
+            this.graphicsContext.fillRect(-bs/2, -bs/2, bs, bs);
             this.graphicsContext.setStroke(color.brighter());
-            this.graphicsContext.setLineWidth(2.5);
-            this.graphicsContext.strokeRect(-boxSize/2, -boxSize/2, boxSize, boxSize);
+            this.graphicsContext.setLineWidth(2.0);
+            this.graphicsContext.strokeRect(-bs/2, -bs/2, bs, bs);
+            // Ribbon cross
+            this.graphicsContext.setStroke(Color.GOLD);
+            this.graphicsContext.setLineWidth(2.0);
+            this.graphicsContext.strokeLine(0, -bs/2, 0, bs/2);
+            this.graphicsContext.strokeLine(-bs/2, 0, bs/2, 0);
+            // Bow on top
+            this.graphicsContext.setFill(Color.GOLD);
+            this.graphicsContext.fillOval(-bs * 0.15, -bs/2 - bs * 0.15, bs * 0.15, bs * 0.15);
+            this.graphicsContext.fillOval(0, -bs/2 - bs * 0.15, bs * 0.15, bs * 0.15);
             // Question mark
             this.graphicsContext.setFill(Color.WHITE);
-            this.graphicsContext.setFont(getCachedFont((int)(boxSize * 0.5)));
-            this.graphicsContext.fillText("?", -boxSize * 0.15, boxSize * 0.15);
-            break;
-
-         default: // chase (Cart Pusher, Return Fraudster, etc.) - wide body
-            this.graphicsContext.setFill(color.darker().darker());
-            double bodyW = drawSize * 1.2;
-            double bodyH = drawSize;
-            this.graphicsContext.fillRect(-bodyW/2, -bodyH/2, bodyW, bodyH);
-            this.graphicsContext.setStroke(color);
-            this.graphicsContext.setLineWidth(2.0);
-            this.graphicsContext.strokeRect(-bodyW/2, -bodyH/2, bodyW, bodyH);
-            // Eyes
-            double eSize = drawSize / 6.0;
-            this.graphicsContext.setFill(Color.WHITE);
-            this.graphicsContext.fillOval(-bodyW/4 - eSize/2, -bodyH/6, eSize, eSize);
-            this.graphicsContext.fillOval(bodyW/4 - eSize/2, -bodyH/6, eSize, eSize);
-            break;
+            this.graphicsContext.setFont(getCachedFont(Math.max(8, (int)(bs * 0.45))));
+            this.graphicsContext.fillText("?", -bs * 0.12, bs * 0.15);
+         }
       }
 
       // Shield overlay for Return Fraudster
       if (hasShield && shieldPercent > 0) {
          this.graphicsContext.setGlobalAlpha(0.4 * shieldPercent);
          this.graphicsContext.setFill(Color.rgb(100, 200, 255));
-         this.graphicsContext.fillRect(-drawSize/2 - 3, -drawSize/2, drawSize/3, drawSize);
+         this.graphicsContext.fillRect(-s/2 - 3, -s/2, s/3, s);
          this.graphicsContext.setGlobalAlpha(1.0);
       }
 
