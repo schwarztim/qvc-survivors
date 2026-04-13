@@ -1,15 +1,15 @@
 package com.qvc.survivors.controller;
 
+import com.qvc.survivors.config.GameSettings;
+import com.qvc.survivors.config.SettingsManager;
 import com.qvc.survivors.engine.Camera;
 import com.qvc.survivors.model.GameState;
-import com.qvc.survivors.model.entity.Collectible;
-import com.qvc.survivors.model.entity.Drone;
-import com.qvc.survivors.model.entity.Enemy;
-import com.qvc.survivors.model.entity.PackageEntity;
-import com.qvc.survivors.model.entity.Player;
-import com.qvc.survivors.model.entity.Projectile;
-import com.qvc.survivors.model.entity.RegularCustomer;
-import com.qvc.survivors.model.entity.VIPCustomer;
+import com.qvc.survivors.model.entity.*;
+import com.qvc.survivors.model.weapon.PassiveItem;
+import com.qvc.survivors.model.weapon.PlayerInventory;
+import com.qvc.survivors.model.weapon.Weapon;
+import com.qvc.survivors.model.weapon.impl.DeliveryDroneSwarm;
+import com.qvc.survivors.model.weapon.impl.HostMicrophone;
 import com.qvc.survivors.model.meta.MetaUpgradeType;
 import com.qvc.survivors.model.upgrade.StatModifier;
 import com.qvc.survivors.model.upgrade.Upgrade;
@@ -32,6 +32,7 @@ import com.qvc.survivors.view.LevelUpView;
 import com.qvc.survivors.view.MetaShopView;
 import com.qvc.survivors.view.PerformanceMonitor;
 import com.qvc.survivors.view.PreloaderView;
+import com.qvc.survivors.view.SettingsView;
 import com.qvc.survivors.view.TutorialView;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +62,7 @@ public class GameController {
    private final PreloaderView preloaderView;
    private final TutorialView tutorialView;
    private final MetaShopView metaShopView;
+   private final SettingsView settingsView;
    private final PerformanceMonitor performanceMonitor;
    private final InputHandler inputHandler;
    private final EntityPoolManager entityPoolManager;
@@ -69,11 +71,14 @@ public class GameController {
    private final UpgradeManager upgradeManager;
    private final SoundEffectGenerator soundGenerator;
    private final MetaProgressionManager metaProgressionManager;
+   private final SettingsManager settingsManager;
+   private GameSettings settings;
    private Player player;
    private List<Enemy> enemies;
    private List<Projectile> projectiles;
    private List<Collectible> collectibles;
-   private List<Drone> drones;
+   private List<ShockwaveEffect> shockwaves;
+   private List<TreasureChest> treasureChests;
    private GameState gameState;
    private List<Upgrade> currentUpgradeOptions;
    private long lastFrameTime;
@@ -86,6 +91,8 @@ public class GameController {
    private boolean isFirstGame;
    private int selectedMetaUpgrade;
    private int moneyEarnedThisRun;
+   private int selectedSettingsRow;
+   private GameState preSettingsState;
    private TileMap tileMap;
    private List<MapCollectible> mapCollectibles;
    private ZoneType currentZone;
@@ -94,14 +101,17 @@ public class GameController {
 
    public GameController(Stage stage, SoundEffectGenerator soundGenerator) {
       this.stage = stage;
-      this.camera = new Camera(200.0, 150.0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-      this.gameView = new GameView(GRID_WIDTH, GRID_HEIGHT, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+      this.settingsManager = new SettingsManager();
+      this.settings = this.settingsManager.load();
+      this.camera = new Camera(200.0, 150.0, this.settings.getWindowWidth(), this.settings.getWindowHeight());
+      this.gameView = new GameView(GRID_WIDTH, GRID_HEIGHT, this.settings.getWindowWidth(), this.settings.getWindowHeight());
       this.gameView.setCamera(this.camera);
       this.hudView = new HUDView(this.gameView);
       this.levelUpView = new LevelUpView(this.gameView);
       this.preloaderView = new PreloaderView(this.gameView);
       this.tutorialView = new TutorialView(this.gameView);
       this.metaShopView = new MetaShopView(this.gameView);
+      this.settingsView = new SettingsView(this.gameView);
       this.performanceMonitor = new PerformanceMonitor();
       this.inputHandler = new InputHandler();
       this.entityPoolManager = new EntityPoolManager();
@@ -114,6 +124,8 @@ public class GameController {
       this.isFirstGame = true;
       this.selectedMetaUpgrade = 0;
       this.moneyEarnedThisRun = 0;
+      this.selectedSettingsRow = 0;
+      this.applySettings();
       this.initializeGame();
       this.setupScene();
    }
@@ -123,7 +135,8 @@ public class GameController {
       this.enemies = new ArrayList<>();
       this.projectiles = new ArrayList<>();
       this.collectibles = new ArrayList<>();
-      this.drones = new ArrayList<>();
+      this.shockwaves = new ArrayList<>();
+      this.treasureChests = new ArrayList<>();
       this.gameState = GameState.PRELOADER;
       this.currentUpgradeOptions = new ArrayList<>();
       this.isTransitioning = false;
@@ -134,6 +147,7 @@ public class GameController {
       this.tileMap = gen.generate(GRID_WIDTH, GRID_HEIGHT);
       this.mapCollectibles = gen.generateCollectibles(this.tileMap);
       this.gameView.setTileMap(this.tileMap);
+      this.placeTreasureChests();
       this.currentZone = null;
       this.zoneNameTimer = 0.0;
       this.zoneNameDisplay = null;
@@ -142,13 +156,14 @@ public class GameController {
 
    private void setupScene() {
       StackPane root = new StackPane(new Node[]{this.gameView});
-      Scene scene = new Scene(root, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+      Scene scene = new Scene(root, this.settings.getWindowWidth(), this.settings.getWindowHeight());
       scene.setOnKeyPressed(event -> this.inputHandler.handleKeyPressed(event.getCode()));
       scene.setOnKeyReleased(event -> this.inputHandler.handleKeyReleased(event.getCode()));
       this.stage.setScene(scene);
       this.stage.setTitle("QVC Survivors");
       this.stage.setMinWidth(800);
       this.stage.setMinHeight(600);
+      this.stage.setFullScreen(this.settings.isFullscreen());
       scene.widthProperty().addListener((obs, oldVal, newVal) -> {
          double w = newVal.doubleValue();
          double h = scene.getHeight();
@@ -206,6 +221,9 @@ public class GameController {
                break;
             case PAUSED:
                this.updatePaused();
+               break;
+            case SETTINGS:
+               this.updateSettings();
          }
       }
    }
@@ -238,6 +256,10 @@ public class GameController {
             GameState nextState = this.isFirstGame ? GameState.TUTORIAL : GameState.PLAYING;
             this.isFirstGame = false;
             this.startTransition(nextState);
+         } else if (key == KeyCode.S) {
+            this.preSettingsState = GameState.PRELOADER;
+            this.selectedSettingsRow = 0;
+            this.gameState = GameState.SETTINGS;
          }
       }
    }
@@ -287,33 +309,77 @@ public class GameController {
       }
 
       this.collisionManager.checkEnemyEnemyCollisions(this.enemies);
-      if (this.player.canFire()) {
-         boolean didFire = this.fireProjectiles();
-         this.player.resetFireTimer();
-         if (didFire) {
-            this.soundGenerator.playShootSound();
+
+      // Weapon system update
+      for (Weapon weapon : this.player.getInventory().getWeapons()) {
+         weapon.update(deltaTime);
+         if (weapon instanceof DeliveryDroneSwarm droneSwarm) {
+            droneSwarm.updateDronePositions(this.player.getX(), this.player.getY());
+            for (Drone drone : droneSwarm.getDrones()) {
+               this.gameView.getParticleSystem().createDroneTrail(drone.getX(), drone.getY());
+            }
+         }
+         if (weapon.isReady()) {
+            List<Projectile> newProjectiles = weapon.fire(
+                    this.player.getX(), this.player.getY(),
+                    this.player.getFacingAngle(),
+                    this.enemies, this.entityPoolManager);
+            if (!newProjectiles.isEmpty()) {
+               this.projectiles.addAll(newProjectiles);
+               this.soundGenerator.playShootSound();
+            }
+            // Handle HostMicrophone shockwave
+            if (weapon instanceof HostMicrophone mic) {
+               ShockwaveEffect sw = mic.getActiveShockwave();
+               if (sw != null) {
+                  this.shockwaves.add(sw);
+                  mic.clearShockwave();
+               }
+            }
          }
       }
 
       for (Projectile projectile : this.projectiles) {
          if (projectile.isActive()) {
+            if (projectile instanceof BoomerangProjectile boom) {
+               boom.setPlayerPosition(this.player.getX(), this.player.getY());
+            }
             projectile.update(deltaTime);
-            if (projectile.isOutOfBounds(400.0, 300.0)) {
+            if (!(projectile instanceof BoomerangProjectile) && !(projectile instanceof ArcProjectile)
+                    && projectile.isOutOfBounds(400.0, 300.0)) {
                projectile.setActive(false);
             }
-
-            if (Math.random() < 0.3) {
+            if (projectile.isActive() && !(projectile instanceof ArcProjectile) && Math.random() < 0.3) {
                this.gameView.getParticleSystem().createTrail(projectile.getX(), projectile.getY(), Color.LIGHTBLUE);
             }
          }
       }
 
-      this.updateDrones(deltaTime);
+      // Update shockwaves
+      for (ShockwaveEffect sw : this.shockwaves) {
+         if (sw.isActive()) {
+            sw.update(deltaTime);
+            for (Enemy enemy : this.enemies) {
+               if (enemy.isActive() && sw.isEnemyInRadius(enemy)) {
+                  enemy.takeDamage(sw.getDamage());
+                  sw.markHit(enemy);
+                  this.gameView.getParticleSystem().createImpact(enemy.getX(), enemy.getY(), Color.MEDIUMPURPLE);
+                  if (!enemy.isActive()) {
+                     this.player.incrementCustomersSatisfied();
+                  }
+               }
+            }
+         }
+      }
+      this.shockwaves.removeIf(sw -> !sw.isActive());
       this.checkCollisionsWithEffects();
       this.spawnCollectiblesFromDeadEnemies();
       this.removeInactiveEntities();
+      // Treasure chest pickup
+      this.checkTreasureChestPickup();
+
       if (this.player.canLevelUp()) {
-         this.currentUpgradeOptions = this.upgradeManager.generateUpgradeOptions();
+         this.currentUpgradeOptions = this.upgradeManager.generateUpgradeOptions(this.player.getInventory());
          this.pushEnemiesAway();
          this.gameView.getParticleSystem().createLevelUpEffect(this.player.getX(), this.player.getY());
          this.soundGenerator.playLevelUpSound();
@@ -373,118 +439,129 @@ public class GameController {
       this.player.setY(py);
    }
 
-   private boolean fireProjectiles() {
-      Enemy nearestEnemy = this.findNearestEnemy();
-      if (nearestEnemy == null) {
-         return false;
-      } else {
-         double packageDamage = this.player.getStats().getStat(StatModifier.PACKAGE_DAMAGE);
-         double packageVelocity = this.player.getStats().getStat(StatModifier.PACKAGE_VELOCITY);
-         int packageCapacity = (int)this.player.getStats().getStat(StatModifier.PACKAGE_CAPACITY);
-
-         for (int i = 0; i < packageCapacity; i++) {
-            double angleOffset = (i - packageCapacity / 2.0) * 0.2;
-            double dirX = nearestEnemy.getX() - this.player.getX();
-            double dirY = nearestEnemy.getY() - this.player.getY();
-            double length = Math.sqrt(dirX * dirX + dirY * dirY);
-            if (length > 0.0) {
-               double angle = Math.atan2(dirY, dirX) + angleOffset;
-               double velocityX = Math.cos(angle) * packageVelocity;
-               double velocityY = Math.sin(angle) * packageVelocity;
-               this.projectiles.add(this.entityPoolManager.obtainPackage(this.player.getX(), this.player.getY(), velocityX, velocityY, packageDamage));
-            }
-         }
-
-         return true;
+   private void placeTreasureChests() {
+      if (this.tileMap == null) return;
+      for (com.qvc.survivors.world.Zone zone : this.tileMap.getZones()) {
+         int cx = zone.getStartX() + zone.getWidth() / 2 + 15;
+         int cy = zone.getStartY() + zone.getHeight() / 2 + 10;
+         this.treasureChests.add(new TreasureChest(cx, cy));
       }
    }
 
-   private Enemy findNearestEnemy() {
-      Enemy nearest = null;
-      double minDistance = Double.MAX_VALUE;
-
-      for (Enemy enemy : this.enemies) {
-         if (enemy.isActive()) {
-            double distance = Math.sqrt(Math.pow(enemy.getX() - this.player.getX(), 2.0) + Math.pow(enemy.getY() - this.player.getY(), 2.0));
-            if (distance < minDistance) {
-               minDistance = distance;
-               nearest = enemy;
+   private void checkTreasureChestPickup() {
+      double pickupRange = this.player.getStats().getStat(StatModifier.PICKUP_RANGE) + 1.0;
+      for (TreasureChest chest : this.treasureChests) {
+         if (!chest.isActive() || chest.isCollected()) continue;
+         double dx = this.player.getX() - chest.getX();
+         double dy = this.player.getY() - chest.getY();
+         double dist = Math.sqrt(dx * dx + dy * dy);
+         if (dist <= pickupRange) {
+            chest.collect();
+            this.soundGenerator.playCollectSound();
+            this.gameView.getParticleSystem().createExplosion(chest.getX(), chest.getY(), Color.GOLD, 25);
+            // Check evolution first
+            com.qvc.survivors.model.weapon.EvolutionRecipe evo =
+                    com.qvc.survivors.model.weapon.EvolutionRegistry.checkEvolutions(this.player.getInventory());
+            if (evo != null) {
+               // Grant a level-up to a random weapon/passive instead of actual evolution (evolution weapons not yet implemented)
+               grantRandomLevelUp();
+            } else {
+               grantRandomLevelUp();
             }
          }
       }
-
-      return nearest;
    }
 
-   private void updateDrones(double deltaTime) {
-      int droneCount = (int)this.player.getStats().getStat(StatModifier.DRONE_COUNT);
-
-      while (this.drones.size() < droneCount) {
-         double orbitRadius = 5.0;
-         double orbitOffset = this.drones.size() * 2 * Math.PI / droneCount;
-         double droneDamage = this.player.getStats().getStat(StatModifier.PACKAGE_DAMAGE) * 0.5;
-         this.drones.add(new Drone(this.player.getX(), this.player.getY(), droneDamage, orbitRadius, orbitOffset));
+   private void grantRandomLevelUp() {
+      PlayerInventory inv = this.player.getInventory();
+      // Try to level up a random weapon
+      List<Weapon> upgradeable = new ArrayList<>();
+      for (Weapon w : inv.getWeapons()) {
+         if (!w.isMaxLevel()) upgradeable.add(w);
       }
-
-      for (Drone drone : this.drones) {
-         drone.update(deltaTime);
-         drone.updatePosition(this.player.getX(), this.player.getY());
-         this.gameView.getParticleSystem().createDroneTrail(drone.getX(), drone.getY());
+      List<PassiveItem> upgradeablePassives = new ArrayList<>();
+      for (PassiveItem p : inv.getPassives()) {
+         if (!p.isMaxLevel()) upgradeablePassives.add(p);
+      }
+      if (!upgradeable.isEmpty() && (upgradeablePassives.isEmpty() || Math.random() < 0.5)) {
+         upgradeable.get((int)(Math.random() * upgradeable.size())).levelUp();
+      } else if (!upgradeablePassives.isEmpty()) {
+         upgradeablePassives.get((int)(Math.random() * upgradeablePassives.size())).levelUp();
       }
    }
 
    private void checkCollisionsWithEffects() {
-      for (Projectile projectile : this.projectiles) {
-         if (projectile.isActive()) {
-            for (Enemy enemy : this.enemies) {
-               if (enemy.isActive() && this.collisionManager.checkCollision(projectile, enemy)) {
-                  double damage = projectile.getDamageComponent().getDamage();
-                  double critChance = this.player.getStats().getStat(StatModifier.CRITICAL_CHANCE);
-                  boolean isCritical = Math.random() < critChance;
-                  if (isCritical) {
-                     damage *= 2.0;
-                     this.gameView.getParticleSystem().createExplosion(enemy.getX(), enemy.getY(), Color.YELLOW, 15);
-                  } else {
-                     this.gameView.getParticleSystem().createImpact(projectile.getX(), projectile.getY(), Color.LIGHTBLUE);
-                  }
+      double critChance = this.player.getStats().getEffectiveStat(StatModifier.CRITICAL_CHANCE, this.player.getInventory());
+      double critMultiplier = 2.0 + this.player.getInventory().getTotalStatBoost(StatModifier.CRIT_DAMAGE);
+      double lifesteal = this.player.getInventory().getTotalStatBoost(StatModifier.LIFESTEAL);
 
+      for (Projectile projectile : this.projectiles) {
+         if (!projectile.isActive()) continue;
+
+         // ArcProjectile: damage enemies in arc
+         if (projectile instanceof ArcProjectile arc) {
+            for (Enemy enemy : this.enemies) {
+               if (enemy.isActive() && arc.isEnemyInArc(enemy)) {
+                  double damage = arc.getDamageComponent().getDamage();
+                  boolean isCritical = Math.random() < critChance;
+                  if (isCritical) damage *= critMultiplier;
                   enemy.takeDamage(damage);
-                  projectile.setActive(false);
+                  arc.markHit(enemy);
+                  applyLifesteal(lifesteal, damage);
+                  this.gameView.getParticleSystem().createImpact(enemy.getX(), enemy.getY(), Color.CRIMSON);
                   this.soundGenerator.playHitSound();
-                  if (!enemy.isActive()) {
-                     Color explosionColor = enemy instanceof VIPCustomer ? Color.RED : Color.ORANGE;
-                     this.gameView.getParticleSystem().createExplosion(enemy.getX(), enemy.getY(), explosionColor, 20);
-                     this.soundGenerator.playExplosionSound();
-                     this.player.incrementCustomersSatisfied();
-                  } else {
-                     this.soundGenerator.playEnemyHurtSound();
-                  }
-                  break;
+                  handleEnemyDeath(enemy);
                }
+            }
+            continue;
+         }
+
+         for (Enemy enemy : this.enemies) {
+            if (enemy.isActive() && this.collisionManager.checkCollision(projectile, enemy)) {
+               double damage = projectile.getDamageComponent().getDamage();
+               boolean isCritical = Math.random() < critChance;
+               if (isCritical) {
+                  damage *= critMultiplier;
+                  this.gameView.getParticleSystem().createExplosion(enemy.getX(), enemy.getY(), Color.YELLOW, 15);
+               } else {
+                  this.gameView.getParticleSystem().createImpact(projectile.getX(), projectile.getY(), Color.LIGHTBLUE);
+               }
+
+               enemy.takeDamage(damage);
+               applyLifesteal(lifesteal, damage);
+               this.soundGenerator.playHitSound();
+
+               // Boomerang: pierce through
+               if (projectile instanceof BoomerangProjectile boom) {
+                  boom.incrementPierce();
+                  if (!boom.canPierce()) {
+                     // let it continue returning
+                  }
+               } else {
+                  projectile.setActive(false);
+               }
+
+               handleEnemyDeath(enemy);
+               if (!(projectile instanceof BoomerangProjectile)) break;
             }
          }
       }
 
-      for (Drone drone : this.drones) {
-         for (Enemy enemyx : this.enemies) {
-            if (enemyx.isActive() && this.collisionManager.checkCollision(drone, enemyx) && drone.canAttack()) {
-               double damagex = drone.getDamageComponent().getDamage();
-               double critChancex = this.player.getStats().getStat(StatModifier.CRITICAL_CHANCE);
-               if (Math.random() < critChancex) {
-                  damagex *= 2.0;
-               }
-
-               enemyx.takeDamage(damagex);
-               drone.resetAttackTimer();
-               this.gameView.getParticleSystem().createImpact(enemyx.getX(), enemyx.getY(), Color.LIGHTGREEN);
-               this.soundGenerator.playHitSound();
-               if (!enemyx.isActive()) {
-                  Color explosionColor = enemyx instanceof VIPCustomer ? Color.RED : Color.ORANGE;
-                  this.gameView.getParticleSystem().createExplosion(enemyx.getX(), enemyx.getY(), explosionColor, 20);
-                  this.soundGenerator.playExplosionSound();
-                  this.player.incrementCustomersSatisfied();
-               } else {
-                  this.soundGenerator.playEnemyHurtSound();
+      // Drone collisions (from weapon system)
+      for (Weapon weapon : this.player.getInventory().getWeapons()) {
+         if (weapon instanceof DeliveryDroneSwarm droneSwarm) {
+            for (Drone drone : droneSwarm.getDrones()) {
+               for (Enemy enemy : this.enemies) {
+                  if (enemy.isActive() && this.collisionManager.checkCollision(drone, enemy) && drone.canAttack()) {
+                     double damage = drone.getDamageComponent().getDamage();
+                     if (Math.random() < critChance) damage *= critMultiplier;
+                     enemy.takeDamage(damage);
+                     drone.resetAttackTimer();
+                     applyLifesteal(lifesteal, damage);
+                     this.gameView.getParticleSystem().createImpact(enemy.getX(), enemy.getY(), Color.LIGHTGREEN);
+                     this.soundGenerator.playHitSound();
+                     handleEnemyDeath(enemy);
+                  }
                }
             }
          }
@@ -512,6 +589,24 @@ public class GameController {
                collectible.setActive(false);
             }
          }
+      }
+   }
+
+   private void handleEnemyDeath(Enemy enemy) {
+      if (!enemy.isActive()) {
+         Color explosionColor = enemy instanceof VIPCustomer ? Color.RED : Color.ORANGE;
+         this.gameView.getParticleSystem().createExplosion(enemy.getX(), enemy.getY(), explosionColor, 20);
+         this.soundGenerator.playExplosionSound();
+         this.player.incrementCustomersSatisfied();
+      } else {
+         this.soundGenerator.playEnemyHurtSound();
+      }
+   }
+
+   private void applyLifesteal(double lifestealPercent, double damageDealt) {
+      if (lifestealPercent > 0.0) {
+         double healAmount = damageDealt * lifestealPercent;
+         this.player.getHealthComponent().heal(healAmount);
       }
    }
 
@@ -651,18 +746,40 @@ public class GameController {
 
          if (choice >= 0 && choice < this.currentUpgradeOptions.size()) {
             Upgrade selectedUpgrade = this.currentUpgradeOptions.get(choice);
-            // Employee discount: double stat values for this level-up
-            if (this.player.isEmployeeDiscountActive()) {
-               for (StatModifier mod : selectedUpgrade.getStatModifiers().keySet()) {
-                  double val = selectedUpgrade.getStatModifiers().get(mod);
-                  selectedUpgrade.getStatModifiers().put(mod, val * 2.0);
+            PlayerInventory inv = this.player.getInventory();
+
+            switch (selectedUpgrade.getChoiceType()) {
+               case WEAPON_LEVELUP -> {
+                  Weapon w = inv.getWeapon(selectedUpgrade.getTargetId());
+                  if (w != null) w.levelUp();
                }
-               this.player.consumeEmployeeDiscount();
-            }
-            this.player.getStats().applyUpgrade(selectedUpgrade);
-            if (selectedUpgrade.getStatModifiers().containsKey(StatModifier.MAX_HEALTH)) {
-               double healthIncrease = selectedUpgrade.getStatModifiers().get(StatModifier.MAX_HEALTH);
-               this.player.getHealthComponent().increaseMaxHealth(healthIncrease);
+               case NEW_WEAPON -> {
+                  Weapon newWeapon = this.upgradeManager.createWeaponById(selectedUpgrade.getTargetId());
+                  if (newWeapon != null) inv.addWeapon(newWeapon);
+               }
+               case PASSIVE_LEVELUP -> {
+                  PassiveItem p = inv.getPassive(selectedUpgrade.getTargetId());
+                  if (p != null) p.levelUp();
+               }
+               case NEW_PASSIVE -> {
+                  PassiveItem newPassive = this.upgradeManager.createPassiveById(selectedUpgrade.getTargetId());
+                  if (newPassive != null) inv.addPassive(newPassive);
+               }
+               case LEGACY -> {
+                  // Employee discount: double stat values for legacy upgrades
+                  if (this.player.isEmployeeDiscountActive()) {
+                     for (StatModifier mod : selectedUpgrade.getStatModifiers().keySet()) {
+                        double val = selectedUpgrade.getStatModifiers().get(mod);
+                        selectedUpgrade.getStatModifiers().put(mod, val * 2.0);
+                     }
+                     this.player.consumeEmployeeDiscount();
+                  }
+                  this.player.getStats().applyUpgrade(selectedUpgrade);
+                  if (selectedUpgrade.getStatModifiers().containsKey(StatModifier.MAX_HEALTH)) {
+                     double healthIncrease = selectedUpgrade.getStatModifiers().get(StatModifier.MAX_HEALTH);
+                     this.player.getHealthComponent().increaseMaxHealth(healthIncrease);
+                  }
+               }
             }
 
             this.player.levelUp();
@@ -700,8 +817,84 @@ public class GameController {
          KeyCode key = this.inputHandler.consumeLastPressedKey();
          if (key == KeyCode.P || key == KeyCode.ESCAPE) {
             this.gameState = GameState.PLAYING;
+         } else if (key == KeyCode.S) {
+            this.preSettingsState = GameState.PAUSED;
+            this.selectedSettingsRow = 0;
+            this.gameState = GameState.SETTINGS;
          }
       }
+   }
+
+   private void updateSettings() {
+      if (this.inputHandler.hasLastPressedKey()) {
+         KeyCode key = this.inputHandler.consumeLastPressedKey();
+         if (key == KeyCode.ESCAPE || key == KeyCode.SPACE) {
+            this.settingsManager.save(this.settings);
+            this.gameState = this.preSettingsState;
+         } else if (key == KeyCode.W || key == KeyCode.UP) {
+            this.selectedSettingsRow = Math.max(0, this.selectedSettingsRow - 1);
+         } else if (key == KeyCode.S || key == KeyCode.DOWN) {
+            this.selectedSettingsRow = Math.min(SettingsView.ROW_COUNT - 1, this.selectedSettingsRow + 1);
+         } else if (key == KeyCode.A || key == KeyCode.LEFT) {
+            this.adjustSetting(this.selectedSettingsRow, -1);
+         } else if (key == KeyCode.D || key == KeyCode.RIGHT) {
+            this.adjustSetting(this.selectedSettingsRow, 1);
+         }
+      }
+   }
+
+   private void adjustSetting(int row, int direction) {
+      switch (row) {
+         case 0:
+            int resIdx = SettingsView.findResolutionIndex(this.settings.getWindowWidth(), this.settings.getWindowHeight());
+            resIdx = Math.max(0, Math.min(SettingsView.getResolutionCount() - 1, resIdx + direction));
+            int[] res = SettingsView.getResolution(resIdx);
+            this.settings.setWindowWidth(res[0]);
+            this.settings.setWindowHeight(res[1]);
+            this.stage.setWidth(res[0]);
+            this.stage.setHeight(res[1]);
+            break;
+         case 1:
+            this.settings.setFullscreen(!this.settings.isFullscreen());
+            this.stage.setFullScreen(this.settings.isFullscreen());
+            break;
+         case 2:
+            this.settings.setMusicVolume(this.settings.getMusicVolume() + direction * 0.1);
+            this.soundGenerator.setMusicVolumeLevel(this.settings.getMusicVolume());
+            break;
+         case 3:
+            this.settings.setSfxVolume(this.settings.getSfxVolume() + direction * 0.1);
+            this.soundGenerator.setMasterVolume(this.settings.getSfxVolume());
+            break;
+         case 4:
+            this.settings.setMusicEnabled(!this.settings.isMusicEnabled());
+            this.soundGenerator.setMusicEnabled(this.settings.isMusicEnabled());
+            break;
+         case 5:
+            this.settings.setSfxEnabled(!this.settings.isSfxEnabled());
+            this.soundGenerator.setSfxEnabled(this.settings.isSfxEnabled());
+            break;
+         case 6:
+            this.settings.setShowFPS(!this.settings.isShowFPS());
+            this.performanceMonitor.setEnabled(this.settings.isShowFPS());
+            break;
+         case 7:
+            this.settings.setDamageNumbers(!this.settings.isDamageNumbers());
+            break;
+         case 8:
+            this.settings.setScreenShake(!this.settings.isScreenShake());
+            break;
+         default:
+            break;
+      }
+   }
+
+   private void applySettings() {
+      this.soundGenerator.setMasterVolume(this.settings.getSfxVolume());
+      this.soundGenerator.setMusicVolumeLevel(this.settings.getMusicVolume());
+      this.soundGenerator.setSfxEnabled(this.settings.isSfxEnabled());
+      this.soundGenerator.setMusicEnabled(this.settings.isMusicEnabled());
+      this.performanceMonitor.setEnabled(this.settings.isShowFPS());
    }
 
    private void updateTutorial() {
@@ -783,6 +976,8 @@ public class GameController {
          this.renderPaused();
       } else if (this.gameState == GameState.META_SHOP) {
          this.metaShopView.render(this.metaProgressionManager.getMetaProgression(), this.selectedMetaUpgrade);
+      } else if (this.gameState == GameState.SETTINGS) {
+         this.settingsView.render(this.settings, this.selectedSettingsRow);
       }
    }
 
@@ -840,14 +1035,40 @@ public class GameController {
 
       for (Projectile projectile : this.projectiles) {
          if (projectile.isActive() && this.camera.isInView(projectile.getX(), projectile.getY(), 5)) {
-            this.gameView.drawPackage(projectile.getX(), projectile.getY(), Color.LIGHTBLUE, 0.8);
+            if (projectile instanceof BoomerangProjectile boom) {
+               this.gameView.drawBoomerang(boom.getX(), boom.getY(), boom.getRotation());
+            } else if (projectile instanceof ArcProjectile arc) {
+               this.gameView.drawArcSlash(arc.getX(), arc.getY(), arc.getFacingAngle(), arc.getRange(), arc.getProgress());
+            } else {
+               this.gameView.drawPackage(projectile.getX(), projectile.getY(), Color.LIGHTBLUE, 0.8);
+            }
          }
       }
 
-      for (Drone drone : this.drones) {
-         if (this.camera.isInView(drone.getX(), drone.getY(), 5)) {
-            double pulseIntensity = 0.5 + 0.5 * Math.sin(this.currentFrameTime * 0.008);
-            this.gameView.drawDrone(drone.getX(), drone.getY(), Color.LIGHTGREEN, 1.0 + pulseIntensity);
+      // Render shockwaves
+      for (ShockwaveEffect sw : this.shockwaves) {
+         if (sw.isActive() && this.camera.isInView(sw.getX(), sw.getY(), (int)sw.getMaxRadius())) {
+            this.gameView.drawShockwave(sw.getX(), sw.getY(), sw.getCurrentRadius(), sw.getProgress());
+         }
+      }
+
+      // Render treasure chests
+      for (TreasureChest chest : this.treasureChests) {
+         if (chest.isActive() && this.camera.isInView(chest.getX(), chest.getY(), 5)) {
+            double pulse = 0.5 + 0.5 * Math.sin(this.currentFrameTime * 0.004);
+            this.gameView.drawCollectible(chest.getX(), chest.getY(), Color.GOLD, 1.0 + pulse, false, true);
+         }
+      }
+
+      // Render drones from weapon system
+      for (Weapon weapon : this.player.getInventory().getWeapons()) {
+         if (weapon instanceof DeliveryDroneSwarm droneSwarm) {
+            for (Drone drone : droneSwarm.getDrones()) {
+               if (this.camera.isInView(drone.getX(), drone.getY(), 5)) {
+                  double pulseIntensity = 0.5 + 0.5 * Math.sin(this.currentFrameTime * 0.008);
+                  this.gameView.drawDrone(drone.getX(), drone.getY(), Color.LIGHTGREEN, 1.0 + pulseIntensity);
+               }
+            }
          }
       }
 
@@ -945,5 +1166,6 @@ public class GameController {
       this.gameView.drawBox(boxX, boxY, boxWidth, boxHeight, Color.rgb(100, 200, 255), Color.rgb(25, 25, 35));
       this.gameView.drawText("═══ PAUSED ═══", centerX - 100.0, centerY - 20.0, Color.rgb(100, 255, 200), 28);
       this.gameView.drawText("Press P or ESC to continue", centerX - 140.0, centerY + 40.0, Color.rgb(220, 230, 255), 16);
+      this.gameView.drawText("Press S for Settings", centerX - 100.0, centerY + 70.0, Color.rgb(150, 200, 255), 14);
    }
 }

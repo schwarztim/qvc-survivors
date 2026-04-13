@@ -71,6 +71,74 @@ public class MetaProgression implements Serializable {
       }
    }
 
+   public String toJson() {
+      StringBuilder sb = new StringBuilder();
+      sb.append("{\n");
+      sb.append("  \"totalMoney\": ").append(totalMoney).append(",\n");
+      sb.append("  \"lifetimeMoney\": ").append(lifetimeMoney).append(",\n");
+      sb.append("  \"gamesPlayed\": ").append(gamesPlayed).append(",\n");
+      sb.append("  \"totalKills\": ").append(totalKills).append(",\n");
+      sb.append("  \"longestSurvivalTime\": ").append(longestSurvivalTime).append(",\n");
+      sb.append("  \"highestWave\": ").append(highestWave).append(",\n");
+      sb.append("  \"highestLevel\": ").append(highestLevel).append(",\n");
+      sb.append("  \"upgradeLevels\": {");
+      boolean first = true;
+      for (Map.Entry<MetaUpgradeType, Integer> entry : upgradeLevels.entrySet()) {
+         if (!first) sb.append(",");
+         sb.append("\n    \"").append(entry.getKey().name()).append("\": ").append(entry.getValue());
+         first = false;
+      }
+      sb.append("\n  }\n");
+      sb.append("}");
+      return sb.toString();
+   }
+
+   public static MetaProgression fromJson(String json) {
+      MetaProgression p = new MetaProgression();
+      // Parse simple key-value pairs from JSON
+      String[] lines = json.split("\n");
+      boolean inUpgrades = false;
+      for (String line : lines) {
+         line = line.trim();
+         if (line.startsWith("\"upgradeLevels\"")) {
+            inUpgrades = true;
+            continue;
+         }
+         if (inUpgrades) {
+            if (line.startsWith("}")) {
+               inUpgrades = false;
+               continue;
+            }
+            int colonIdx = line.indexOf(':');
+            if (colonIdx < 0) continue;
+            String key = line.substring(0, colonIdx).trim().replace("\"", "");
+            String value = line.substring(colonIdx + 1).trim().replace(",", "");
+            try {
+               MetaUpgradeType type = MetaUpgradeType.valueOf(key);
+               p.upgradeLevels.put(type, Integer.parseInt(value));
+            } catch (IllegalArgumentException ignored) {
+               // Unknown upgrade type from old save, skip
+            }
+            continue;
+         }
+         int colonIdx = line.indexOf(':');
+         if (colonIdx < 0) continue;
+         String key = line.substring(0, colonIdx).trim().replace("\"", "");
+         String value = line.substring(colonIdx + 1).trim().replace(",", "");
+         switch (key) {
+            case "totalMoney": p.totalMoney = Integer.parseInt(value); break;
+            case "lifetimeMoney": p.lifetimeMoney = Integer.parseInt(value); break;
+            case "gamesPlayed": p.gamesPlayed = Integer.parseInt(value); break;
+            case "totalKills": p.totalKills = Integer.parseInt(value); break;
+            case "longestSurvivalTime": p.longestSurvivalTime = Double.parseDouble(value); break;
+            case "highestWave": p.highestWave = Integer.parseInt(value); break;
+            case "highestLevel": p.highestLevel = Integer.parseInt(value); break;
+            default: break;
+         }
+      }
+      return p;
+   }
+
    @Generated
    public int getTotalMoney() {
       return this.totalMoney;

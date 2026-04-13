@@ -8,5 +8,6 @@ public enum GameState {
    PAUSED,
    LEVEL_UP,
    GAME_OVER,
-   META_SHOP;
+   META_SHOP,
+   SETTINGS;
 }

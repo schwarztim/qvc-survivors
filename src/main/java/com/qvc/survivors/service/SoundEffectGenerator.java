@@ -15,21 +15,48 @@ public class SoundEffectGenerator {
    private static final AudioFormat AUDIO_FORMAT = new AudioFormat(22050.0F, 8, 1, true, true);
    private static final String ERROR_AUDIO_LINE = "Failed to initialize audio line";
    private static final double TWO_PI = Math.PI * 2;
-   private static final double MASTER_VOLUME = 0.1;
+   private double masterVolume = 0.1;
+   private double musicVolume = 0.1;
+   private boolean sfxEnabled = true;
+   private boolean musicEnabled = true;
    private Thread introMusicThread;
    private volatile boolean introMusicPlaying = false;
    private Thread metaShopMusicThread;
    private volatile boolean metaShopMusicPlaying = false;
 
+   public void setMasterVolume(double v) {
+      this.masterVolume = Math.max(0.0, Math.min(1.0, v)) * 0.2;
+   }
+
+   public void setMusicVolumeLevel(double v) {
+      this.musicVolume = Math.max(0.0, Math.min(1.0, v)) * 0.2;
+   }
+
+   public void setSfxEnabled(boolean enabled) {
+      this.sfxEnabled = enabled;
+   }
+
+   public void setMusicEnabled(boolean enabled) {
+      this.musicEnabled = enabled;
+      if (!enabled) {
+         this.stopIntroMusic();
+         this.stopMetaShopMusic();
+      }
+   }
+
    public void playShootSound() {
+      if (!this.sfxEnabled) return;
       this.playSound(800.0, 50);
    }
 
    public void playHitSound() {
+      if (!this.sfxEnabled) return;
       this.playSound(400.0, 80);
    }
 
    public void playExplosionSound() {
+      if (!this.sfxEnabled) return;
+      double vol = this.masterVolume;
       Thread soundThread = new Thread(() -> {
          try {
             SourceDataLine line = AudioSystem.getSourceDataLine(AUDIO_FORMAT);
@@ -44,7 +71,7 @@ public class SoundEffectGenerator {
                double angle = (Math.PI * 2) * frequency * time;
                double decay = Math.exp(-5.0 * time);
                double sample = Math.sin(angle) + 0.5 * Math.sin(2.0 * angle) + 0.25 * Math.sin(3.0 * angle);
-               buffer[i] = (byte)(sample * 127.0 * decay * 0.1);
+               buffer[i] = (byte)(sample * 127.0 * decay * vol);
             }
 
             line.write(buffer, 0, buffer.length);
@@ -59,6 +86,8 @@ public class SoundEffectGenerator {
    }
 
    public void playCollectSound() {
+      if (!this.sfxEnabled) return;
+      double vol = this.masterVolume;
       Thread soundThread = new Thread(() -> {
          try {
             SourceDataLine line = AudioSystem.getSourceDataLine(AUDIO_FORMAT);
@@ -73,7 +102,7 @@ public class SoundEffectGenerator {
                for (int i = 0; i < buffer.length; i++) {
                   double time = i / 22050.0;
                   double angle = (Math.PI * 2) * frequency * time;
-                  buffer[i] = (byte)(Math.sin(angle) * 127.0 * 0.1);
+                  buffer[i] = (byte)(Math.sin(angle) * 127.0 * vol);
                }
 
                line.write(buffer, 0, buffer.length);
@@ -90,6 +119,8 @@ public class SoundEffectGenerator {
    }
 
    public void playLevelUpSound() {
+      if (!this.sfxEnabled) return;
+      double vol = this.masterVolume;
       Thread soundThread = new Thread(() -> {
          try {
             SourceDataLine line = AudioSystem.getSourceDataLine(AUDIO_FORMAT);
@@ -105,7 +136,7 @@ public class SoundEffectGenerator {
                   double time = i / 22050.0;
                   double angle = (Math.PI * 2) * frequency * time;
                   double envelope = 1.0 - time * 1000.0 / noteDuration * 0.5;
-                  buffer[i] = (byte)(Math.sin(angle) * 127.0 * envelope * 0.1);
+                  buffer[i] = (byte)(Math.sin(angle) * 127.0 * envelope * vol);
                }
 
                line.write(buffer, 0, buffer.length);
@@ -122,6 +153,8 @@ public class SoundEffectGenerator {
    }
 
    public void playGameOverSound() {
+      if (!this.sfxEnabled) return;
+      double vol = this.masterVolume;
       Thread soundThread = new Thread(() -> {
          try {
             SourceDataLine line = AudioSystem.getSourceDataLine(AUDIO_FORMAT);
@@ -136,7 +169,7 @@ public class SoundEffectGenerator {
                for (int i = 0; i < buffer.length; i++) {
                   double time = i / 22050.0;
                   double angle = (Math.PI * 2) * frequency * time;
-                  buffer[i] = (byte)(Math.sin(angle) * 127.0 * 0.1);
+                  buffer[i] = (byte)(Math.sin(angle) * 127.0 * vol);
                }
 
                line.write(buffer, 0, buffer.length);
@@ -153,14 +186,17 @@ public class SoundEffectGenerator {
    }
 
    public void playEnemyHurtSound() {
+      if (!this.sfxEnabled) return;
       this.playSound(300.0, 60);
    }
 
    public void playPlayerHurtSound() {
+      if (!this.sfxEnabled) return;
       this.playSound(250.0, 100);
    }
 
    private void playSound(double frequency, int durationMs) {
+      double vol = this.masterVolume;
       Thread soundThread = new Thread(() -> {
          try {
             SourceDataLine line = AudioSystem.getSourceDataLine(AUDIO_FORMAT);
@@ -171,7 +207,7 @@ public class SoundEffectGenerator {
             for (int i = 0; i < buffer.length; i++) {
                double time = i / 22050.0;
                double angle = (Math.PI * 2) * frequency * time;
-               buffer[i] = (byte)(Math.sin(angle) * 127.0 * 0.1);
+               buffer[i] = (byte)(Math.sin(angle) * 127.0 * vol);
             }
 
             line.write(buffer, 0, buffer.length);
@@ -186,8 +222,10 @@ public class SoundEffectGenerator {
    }
 
    public void startIntroMusic() {
+      if (!this.musicEnabled) return;
       if (!this.introMusicPlaying) {
          this.introMusicPlaying = true;
+         double mVol = this.musicVolume;
          this.introMusicThread = new Thread(
             () -> {
                try {
@@ -220,7 +258,7 @@ public class SoundEffectGenerator {
                               double highWave = Math.sin((Math.PI * 2) * high * time) * 0.2;
                               double melodyWave = Math.sin((Math.PI * 2) * melodyNote * time) * 0.35;
                               double mixedSample = (bassWave + midWave + highWave + melodyWave) * envelope;
-                              buffer[i] = (byte)(mixedSample * 127.0 * 0.1);
+                              buffer[i] = (byte)(mixedSample * 127.0 * mVol);
                            }
 
                            line.write(buffer, 0, buffer.length);
@@ -250,8 +288,10 @@ public class SoundEffectGenerator {
 
    public void startMetaShopMusic() {
       this.stopIntroMusic();
+      if (!this.musicEnabled) return;
       if (!this.metaShopMusicPlaying) {
          this.metaShopMusicPlaying = true;
+         double mVol = this.musicVolume;
          this.metaShopMusicThread = new Thread(
             () -> {
                try {
@@ -341,7 +381,7 @@ public class SoundEffectGenerator {
                               double melodyWave = Math.sin((Math.PI * 2) * melodyNote * time) * 0.4;
                               double arpeggio = Math.sin((Math.PI * 2) * melodyNote * 2.0 * time) * 0.1 * Math.sin(time * 10.0);
                               double mixedSample = (bassWave + midWave + highWave + melodyWave + arpeggio) * envelope;
-                              buffer[i] = (byte)(mixedSample * 127.0 * 0.1);
+                              buffer[i] = (byte)(mixedSample * 127.0 * mVol);
                            }
 
                            line.write(buffer, 0, buffer.length);

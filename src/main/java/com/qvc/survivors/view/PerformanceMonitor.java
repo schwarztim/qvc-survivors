@@ -14,6 +14,7 @@ public class PerformanceMonitor {
    private double currentFps = 0.0;
    private long currentMemoryUsed = 0L;
    private long currentMemoryTotal = 0L;
+   private boolean enabled = true;
 
    public void update(double deltaTime, long frameTime) {
       this.frameTimes[this.frameIndex] = frameTime;
@@ -49,7 +50,16 @@ public class PerformanceMonitor {
       this.currentMemoryUsed = this.currentMemoryTotal - runtime.freeMemory();
    }
 
+   public void setEnabled(boolean enabled) {
+      this.enabled = enabled;
+   }
+
+   public boolean isEnabled() {
+      return this.enabled;
+   }
+
    public void render(GraphicsContext gc, double canvasWidth, double canvasHeight) {
+      if (!this.enabled) return;
       double x = canvasWidth - 150.0;
       double y = canvasHeight - 60.0;
       gc.save();

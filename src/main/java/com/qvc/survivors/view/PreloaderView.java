@@ -397,7 +397,13 @@ public class PreloaderView {
          String instruction = "Press SPACE to begin";
          double instructionWidth = this.gameView.getGraphicsContext().getFont().getSize() * instruction.length() * 0.6;
          this.gameView.getGraphicsContext().fillText(instruction, centerX - instructionWidth / 2.0, y);
-         y += 100.0;
+         y += 30.0;
+         this.gameView.getGraphicsContext().setFill(Color.rgb(150, 200, 255, fadeIn * (0.4 + blinkSpeed * 0.3)));
+         this.gameView.getGraphicsContext().setFont(Font.font("Courier New", FontWeight.NORMAL, 14.0));
+         String settingsHint = "Press S for Settings";
+         double settingsWidth = this.gameView.getGraphicsContext().getFont().getSize() * settingsHint.length() * 0.6;
+         this.gameView.getGraphicsContext().fillText(settingsHint, centerX - settingsWidth / 2.0, y);
+         y += 70.0;
          this.gameView.getGraphicsContext().setFont(Font.font("Courier New", FontWeight.NORMAL, 14.0));
          this.gameView.getGraphicsContext().setFill(Color.rgb(150, 150, 150, fadeIn * 0.7));
          String versionText = "Version " + VersionUtil.getVersion();

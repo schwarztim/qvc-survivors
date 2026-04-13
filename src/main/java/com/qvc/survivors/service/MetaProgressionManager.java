@@ -3,9 +3,10 @@ package com.qvc.survivors.service;
 import com.qvc.survivors.model.meta.MetaProgression;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import lombok.Generated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +14,8 @@ import org.slf4j.LoggerFactory;
 public class MetaProgressionManager {
    @Generated
    private static final Logger log = LoggerFactory.getLogger(MetaProgressionManager.class);
-   private static final String SAVE_FILE_NAME = "meta_progression.dat";
+   private static final String SAVE_FILE_DAT = "meta_progression.dat";
+   private static final String SAVE_FILE_JSON = "meta_progression.json";
    private static final String SAVE_DIRECTORY = System.getProperty("user.home") + File.separator + ".qvcsurvivors";
    private MetaProgression metaProgression;
 
@@ -36,36 +38,46 @@ public class MetaProgressionManager {
             saveDir.mkdirs();
          }
 
-         File saveFile = new File(saveDir, "meta_progression.dat");
-
-         try (
-            FileOutputStream fileOut = new FileOutputStream(saveFile);
-            ObjectOutputStream out = new ObjectOutputStream(fileOut);
-         ) {
-            out.writeObject(this.metaProgression);
-            log.info("Meta progression saved successfully");
-         }
-      } catch (Exception var11) {
-         log.error("Failed to save meta progression", var11);
+         Path jsonPath = Path.of(SAVE_DIRECTORY, SAVE_FILE_JSON);
+         Files.writeString(jsonPath, this.metaProgression.toJson(), StandardCharsets.UTF_8);
+         log.info("Meta progression saved as JSON");
+      } catch (Exception e) {
+         log.error("Failed to save meta progression", e);
       }
    }
 
    public void load() {
+      // Try JSON first
       try {
-         File saveFile = new File(SAVE_DIRECTORY, "meta_progression.dat");
-         if (saveFile.exists()) {
+         Path jsonPath = Path.of(SAVE_DIRECTORY, SAVE_FILE_JSON);
+         if (Files.exists(jsonPath)) {
+            String json = Files.readString(jsonPath, StandardCharsets.UTF_8);
+            this.metaProgression = MetaProgression.fromJson(json);
+            log.info("Meta progression loaded from JSON");
+            return;
+         }
+      } catch (Exception e) {
+         log.error("Failed to load meta progression JSON", e);
+      }
+
+      // Fallback: try old binary format
+      try {
+         File datFile = new File(SAVE_DIRECTORY, SAVE_FILE_DAT);
+         if (datFile.exists()) {
             try (
-               FileInputStream fileIn = new FileInputStream(saveFile);
+               FileInputStream fileIn = new FileInputStream(datFile);
                ObjectInputStream in = new ObjectInputStream(fileIn);
             ) {
                this.metaProgression = (MetaProgression)in.readObject();
-               log.info("Meta progression loaded successfully");
+               log.info("Meta progression loaded from legacy .dat format");
             }
-
+            // Migrate: save as JSON immediately
+            this.save();
+            log.info("Migrated meta progression to JSON format");
             return;
          }
-      } catch (Exception var10) {
-         log.error("Failed to load meta progression", var10);
+      } catch (Exception e) {
+         log.error("Failed to load meta progression .dat", e);
       }
 
       this.metaProgression = new MetaProgression();
