@@ -235,7 +235,7 @@ public class GameController {
 
    private void update(double deltaTime) {
       this.currentFrameTime = System.currentTimeMillis();
-      this.gamepadHandler.update();
+      this.gamepadHandler.update(deltaTime);
       if (this.isTransitioning) {
          this.updateTransition(deltaTime);
       } else {
