@@ -130,6 +130,7 @@ public class Player extends Entity {
          double effectiveDamage = damage * Math.max(0.0, 1.0 - reduction);
          this.healthComponent.damage(effectiveDamage);
          this.damageFlashTimer = 0.2;
+         this.invulnerabilityTimer = 1.5;
          if (!this.healthComponent.isAlive()) {
             this.active = false;
          }
