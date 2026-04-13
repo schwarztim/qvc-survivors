@@ -508,7 +508,7 @@ public class GameController {
          }
       }
       this.shockwaves.removeIf(sw -> !sw.isActive());
-      this.checkCollisionsWithEffects();
+      this.checkCollisionsWithEffects(deltaTime);
       this.spawnCollectiblesFromDeadEnemies();
       for (Collectible collectible : this.collectibles) {
          if (collectible.isActive()) {
@@ -647,10 +647,11 @@ public class GameController {
       }
    }
 
-   private void checkCollisionsWithEffects() {
+   private void checkCollisionsWithEffects(double deltaTime) {
       double critChance = this.player.getStats().getEffectiveStat(StatModifier.CRITICAL_CHANCE, this.player.getInventory());
       double critMultiplier = 2.0 + this.player.getInventory().getTotalStatBoost(StatModifier.CRIT_DAMAGE);
       double lifesteal = this.player.getInventory().getTotalStatBoost(StatModifier.LIFESTEAL);
+      this.collisionManager.buildEnemyGrid(this.enemies);
 
       for (Projectile projectile : this.projectiles) {
          if (!projectile.isActive()) continue;
@@ -757,11 +758,16 @@ public class GameController {
          }
       }
       double pickupRange = this.player.getStats().getStat(StatModifier.PICKUP_RANGE);
+      double collectRadius = 0.5;
 
       for (Collectible collectible : this.collectibles) {
          if (collectible.isActive()) {
-            double distance = Math.sqrt(Math.pow(this.player.getX() - collectible.getX(), 2.0) + Math.pow(this.player.getY() - collectible.getY(), 2.0));
-            if (distance <= pickupRange) {
+            double dx = this.player.getX() - collectible.getX();
+            double dy = this.player.getY() - collectible.getY();
+            double distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= collectRadius) {
+               // Close enough to collect
                if (collectible.isHealthPack()) {
                   this.player.getHealthComponent().heal(collectible.getValue());
                   this.gameView.getParticleSystem().createCollectionEffect(collectible.getX(), collectible.getY(), Color.LIGHTGREEN);
@@ -772,9 +778,15 @@ public class GameController {
                   Color moneyColor = value >= 5 ? Color.GOLD : Color.YELLOW;
                   this.gameView.getParticleSystem().createCollectionEffect(collectible.getX(), collectible.getY(), moneyColor);
                }
-
                this.soundGenerator.playCollectSound();
                collectible.setActive(false);
+            } else if (distance <= pickupRange) {
+               // Within magnet range: pull toward player with accelerating speed
+               double pullStrength = 15.0 * (1.0 - distance / pickupRange) + 5.0;
+               double nx = dx / distance;
+               double ny = dy / distance;
+               collectible.setX(collectible.getX() + nx * pullStrength * deltaTime);
+               collectible.setY(collectible.getY() + ny * pullStrength * deltaTime);
             }
          }
       }
@@ -934,6 +946,18 @@ public class GameController {
    private void spawnCollectiblesFromDeadEnemies() {
       for (Enemy enemy : this.enemies) {
          if (!enemy.isActive() && enemy.getHealthComponent().getCurrentHealth() <= 0.0) {
+            // Mystery Box: piñata bonus loot
+            if (enemy instanceof GenericEnemy ge && ge.getEnemyType() == EnemyType.MYSTERY_BOX) {
+               int dropCount = 5 + (int)(Math.random() * 4);
+               for (int i = 0; i < dropCount; i++) {
+                  double angle = Math.random() * Math.PI * 2.0;
+                  double dist = 1.0 + Math.random() * 3.0;
+                  double cx = enemy.getX() + Math.cos(angle) * dist;
+                  double cy = enemy.getY() + Math.sin(angle) * dist;
+                  boolean isHealth = i < 2;
+                  this.collectibles.add(this.entityPoolManager.obtainCollectible(cx, cy, isHealth ? 25 : 3, isHealth));
+               }
+            }
             this.collectibles.add(this.entityPoolManager.obtainCollectible(enemy.getX(), enemy.getY(), enemy.getMoneyDrop(), false));
             double baseDropChance = 0.03;
             double bonusChance = this.metaProgressionManager.getMetaProgression().getUpgradeValue(MetaUpgradeType.HEALTH_PACK_DROP_CHANCE) / 100.0;

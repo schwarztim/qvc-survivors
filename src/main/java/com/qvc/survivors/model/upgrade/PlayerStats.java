@@ -10,7 +10,7 @@ public class PlayerStats {
    private final Map<StatModifier, Double> stats = new HashMap<>();
    private static final double BASE_FIRE_RATE = 1.0;
    private static final double BASE_PACKAGE_CAPACITY = 1.0;
-   private static final double BASE_PICKUP_RANGE = 3.0;
+   private static final double BASE_PICKUP_RANGE = 5.0;
    private static final double BASE_PACKAGE_DAMAGE = 1.0;
    private static final double BASE_CRITICAL_CHANCE = 0.0;
    private static final double BASE_MAX_HEALTH = 100.0;
@@ -20,7 +20,7 @@ public class PlayerStats {
    public PlayerStats() {
       this.stats.put(StatModifier.FIRE_RATE, 1.0);
       this.stats.put(StatModifier.PACKAGE_CAPACITY, 1.0);
-      this.stats.put(StatModifier.PICKUP_RANGE, 3.0);
+      this.stats.put(StatModifier.PICKUP_RANGE, 5.0);
       this.stats.put(StatModifier.PACKAGE_DAMAGE, 1.0);
       this.stats.put(StatModifier.CRITICAL_CHANCE, 0.0);
       this.stats.put(StatModifier.MAX_HEALTH, 100.0);
