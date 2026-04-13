@@ -11,7 +11,10 @@ public enum MetaUpgradeType {
    STARTING_PICKUP_RANGE("Pickup Range", "Increase starting pickup range", 0.5, 5, 2.5),
    HEALTH_PACK_DROP_CHANCE("Health Pack Chance", "Increase health pack drop rate", 1.0, 5, 5.0),
    STARTING_CRIT_CHANCE("Critical Chance", "Increase starting critical chance", 2.0, 5, 10.0),
-   PACKAGE_VELOCITY("Package Speed", "Increase starting package velocity", 10.0, 5, 50.0);
+   PACKAGE_VELOCITY("Package Speed", "Increase starting package velocity", 10.0, 5, 50.0),
+   REROLL_CHARGES("Reroll Charges", "Reroll level-up options per run", 1.0, 3, 3.0),
+   SKIP_CHARGES("Skip Charges", "Skip level-up per run", 1.0, 3, 3.0),
+   BANISH_CHARGES("Banish Charges", "Banish upgrades from pool per run", 1.0, 3, 3.0);
 
    private final String displayName;
    private final String description;

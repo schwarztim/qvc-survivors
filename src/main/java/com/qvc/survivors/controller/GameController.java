@@ -529,6 +529,7 @@ public class GameController {
 
       if (this.player.canLevelUp()) {
          this.currentUpgradeOptions = this.upgradeManager.generateUpgradeOptions(this.player.getInventory());
+         this.currentUpgradeOptions.removeIf(u -> this.banishedUpgradeIds.contains(u.getChoiceType() + ":" + u.getTargetId()));
          this.pushEnemiesAway();
          this.gameView.getParticleSystem().createLevelUpEffect(this.player.getX(), this.player.getY());
          this.soundGenerator.playLevelUpSound();
@@ -1124,7 +1125,7 @@ public class GameController {
    }
 
    private void updateLevelUp() {
-      // Gamepad: D-pad selects, A confirms by injecting synthetic key
+      // Gamepad: D-pad left/right selects, A confirms
       if (this.gamepadHandler.isDpadUpJustPressed()) {
          this.selectedLevelUpOption = Math.max(0, this.selectedLevelUpOption - 1);
       } else if (this.gamepadHandler.isDpadDownJustPressed()) {
@@ -1137,6 +1138,49 @@ public class GameController {
       }
       if (this.inputHandler.hasLastPressedKey()) {
          KeyCode key = this.inputHandler.consumeLastPressedKey();
+
+         // Reroll: re-randomize options
+         if (key == KeyCode.R && this.rerollsRemaining > 0) {
+            this.rerollsRemaining--;
+            this.currentUpgradeOptions = this.upgradeManager.generateUpgradeOptions(this.player.getInventory());
+            this.currentUpgradeOptions.removeIf(u -> this.banishedUpgradeIds.contains(u.getChoiceType() + ":" + u.getTargetId()));
+            this.selectedLevelUpOption = 0;
+            return;
+         }
+
+         // Skip: skip level-up entirely
+         if (key == KeyCode.S && this.skipsRemaining > 0) {
+            this.skipsRemaining--;
+            this.player.levelUp();
+            this.gameState = GameState.PLAYING;
+            return;
+         }
+
+         // Banish: remove selected option from pool for this run
+         if (key == KeyCode.B && this.banishesRemaining > 0 && !this.currentUpgradeOptions.isEmpty()) {
+            int banishIdx = this.selectedLevelUpOption;
+            if (banishIdx >= 0 && banishIdx < this.currentUpgradeOptions.size()) {
+               Upgrade banished = this.currentUpgradeOptions.get(banishIdx);
+               this.banishedUpgradeIds.add(banished.getChoiceType() + ":" + banished.getTargetId());
+               this.banishesRemaining--;
+               this.currentUpgradeOptions.remove(banishIdx);
+               if (this.selectedLevelUpOption >= this.currentUpgradeOptions.size()) {
+                  this.selectedLevelUpOption = Math.max(0, this.currentUpgradeOptions.size() - 1);
+               }
+            }
+            return;
+         }
+
+         // Arrow keys for card selection
+         if (key == KeyCode.LEFT) {
+            this.selectedLevelUpOption = Math.max(0, this.selectedLevelUpOption - 1);
+            return;
+         }
+         if (key == KeyCode.RIGHT) {
+            this.selectedLevelUpOption = Math.min(this.currentUpgradeOptions.size() - 1, this.selectedLevelUpOption + 1);
+            return;
+         }
+
          int choice = -1;
          if (key == KeyCode.DIGIT1 || key == KeyCode.NUMPAD1) {
             choice = 0;
@@ -1144,6 +1188,8 @@ public class GameController {
             choice = 1;
          } else if (key == KeyCode.DIGIT3 || key == KeyCode.NUMPAD3) {
             choice = 2;
+         } else if (key == KeyCode.ENTER || key == KeyCode.SPACE) {
+            choice = this.selectedLevelUpOption;
          }
 
          if (choice >= 0 && choice < this.currentUpgradeOptions.size()) {
@@ -1523,7 +1569,7 @@ public class GameController {
          this.characterSelectView.render(this.selectedCharacter);
          this.camera.setEnabled(true);
       } else if (this.gameState == GameState.LEVEL_UP) {
-         this.levelUpView.render(this.currentUpgradeOptions, this.selectedLevelUpOption, this.rerollsRemaining, this.skipsRemaining, this.banishesRemaining);
+         this.levelUpView.render(this.currentUpgradeOptions);
       } else if (this.gameState == GameState.GAME_OVER) {
          this.deathRecapView.render(this.player, this.waveManager.getCurrentWave(),
             this.currentZone, this.player.getInventory());
