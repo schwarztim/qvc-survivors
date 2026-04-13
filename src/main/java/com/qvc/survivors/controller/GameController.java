@@ -19,6 +19,8 @@ import com.qvc.survivors.service.MetaProgressionManager;
 import com.qvc.survivors.service.SoundEffectGenerator;
 import com.qvc.survivors.service.UpgradeManager;
 import com.qvc.survivors.service.WaveManager;
+import com.qvc.survivors.audio.MusicManager;
+import com.qvc.survivors.audio.SFXManager;
 import com.qvc.survivors.world.MapCollectible;
 import com.qvc.survivors.world.MapCollectibleType;
 import com.qvc.survivors.world.TileMap;
@@ -65,11 +67,14 @@ public class GameController {
    private final SettingsView settingsView;
    private final PerformanceMonitor performanceMonitor;
    private final InputHandler inputHandler;
+   private final GamepadHandler gamepadHandler;
    private final EntityPoolManager entityPoolManager;
    private final WaveManager waveManager;
    private final CollisionManager collisionManager;
    private final UpgradeManager upgradeManager;
    private final SoundEffectGenerator soundGenerator;
+   private final MusicManager musicManager;
+   private final SFXManager sfxManager;
    private final MetaProgressionManager metaProgressionManager;
    private final SettingsManager settingsManager;
    private GameSettings settings;
@@ -93,6 +98,7 @@ public class GameController {
    private int moneyEarnedThisRun;
    private int selectedSettingsRow;
    private GameState preSettingsState;
+   private int selectedLevelUpOption;
    private TileMap tileMap;
    private List<MapCollectible> mapCollectibles;
    private ZoneType currentZone;
@@ -114,11 +120,15 @@ public class GameController {
       this.settingsView = new SettingsView(this.gameView);
       this.performanceMonitor = new PerformanceMonitor();
       this.inputHandler = new InputHandler();
+      this.gamepadHandler = new GamepadHandler();
+      this.gamepadHandler.setEnabled(this.settings.isGamepadEnabled());
       this.entityPoolManager = new EntityPoolManager();
       this.waveManager = new WaveManager(400.0, 300.0, this.entityPoolManager);
       this.collisionManager = new CollisionManager(400, 300);
       this.upgradeManager = new UpgradeManager();
       this.soundGenerator = soundGenerator;
+      this.musicManager = new MusicManager();
+      this.sfxManager = new SFXManager();
       this.metaProgressionManager = new MetaProgressionManager();
       this.preloaderAnimationTime = 0.0;
       this.isFirstGame = true;
@@ -151,7 +161,11 @@ public class GameController {
       this.currentZone = null;
       this.zoneNameTimer = 0.0;
       this.zoneNameDisplay = null;
-      this.soundGenerator.startIntroMusic();
+      if (this.settings.isRetroAudio()) {
+         this.soundGenerator.startIntroMusic();
+      } else {
+         this.musicManager.playMenuMusic();
+      }
    }
 
    private void setupScene() {
@@ -197,6 +211,7 @@ public class GameController {
 
    private void update(double deltaTime) {
       this.currentFrameTime = System.currentTimeMillis();
+      this.gamepadHandler.update();
       if (this.isTransitioning) {
          this.updateTransition(deltaTime);
       } else {
@@ -236,7 +251,11 @@ public class GameController {
          this.gameState = this.targetState;
          this.targetState = null;
          if (this.gameState == GameState.PLAYING) {
-            this.soundGenerator.stopIntroMusic();
+            if (this.settings.isRetroAudio()) {
+               this.soundGenerator.stopIntroMusic();
+            } else {
+               this.musicManager.stop();
+            }
          }
       }
    }
@@ -262,6 +281,15 @@ public class GameController {
             this.gameState = GameState.SETTINGS;
          }
       }
+      if (this.gamepadHandler.isConfirmJustPressed()) {
+         GameState nextState = this.isFirstGame ? GameState.TUTORIAL : GameState.PLAYING;
+         this.isFirstGame = false;
+         this.startTransition(nextState);
+      } else if (this.gamepadHandler.isPauseJustPressed()) {
+         this.preSettingsState = GameState.PRELOADER;
+         this.selectedSettingsRow = 0;
+         this.gameState = GameState.SETTINGS;
+      }
    }
 
    private void updatePlaying(double deltaTime) {
@@ -280,6 +308,9 @@ public class GameController {
          if (newZone != null) {
             this.zoneNameDisplay = newZone.getDisplayName();
             this.zoneNameTimer = 3.0;
+            if (!this.settings.isRetroAudio()) {
+               this.musicManager.playZoneMusic(newZone);
+            }
          }
       }
       this.waveManager.setCurrentZone(this.currentZone);
@@ -383,6 +414,7 @@ public class GameController {
          this.pushEnemiesAway();
          this.gameView.getParticleSystem().createLevelUpEffect(this.player.getX(), this.player.getY());
          this.soundGenerator.playLevelUpSound();
+         this.selectedLevelUpOption = 0;
          this.gameState = GameState.LEVEL_UP;
       }
 
@@ -397,6 +429,9 @@ public class GameController {
             this.inputHandler.consumeLastPressedKey();
             this.gameState = GameState.PAUSED;
          }
+      }
+      if (this.gamepadHandler.isPauseJustPressed()) {
+         this.gameState = GameState.PAUSED;
       }
    }
 
@@ -418,6 +453,14 @@ public class GameController {
       if (this.inputHandler.isKeyPressed(KeyCode.D) || this.inputHandler.isKeyPressed(KeyCode.RIGHT)) {
          dirX++;
       }
+
+      // Gamepad left stick (additive)
+      dirX += this.gamepadHandler.getMoveX();
+      dirY += this.gamepadHandler.getMoveY();
+
+      // Clamp to unit circle
+      double len = Math.sqrt(dirX * dirX + dirY * dirY);
+      if (len > 1.0) { dirX /= len; dirY /= len; }
 
       this.player.getMovementComponent().setDirection(dirX, dirY);
    }
@@ -733,6 +776,17 @@ public class GameController {
    }
 
    private void updateLevelUp() {
+      // Gamepad: D-pad selects, A confirms by injecting synthetic key
+      if (this.gamepadHandler.isDpadUpJustPressed()) {
+         this.selectedLevelUpOption = Math.max(0, this.selectedLevelUpOption - 1);
+      } else if (this.gamepadHandler.isDpadDownJustPressed()) {
+         this.selectedLevelUpOption = Math.min(this.currentUpgradeOptions.size() - 1, this.selectedLevelUpOption + 1);
+      } else if (this.gamepadHandler.isConfirmJustPressed() && !this.currentUpgradeOptions.isEmpty()) {
+         KeyCode[] digits = {KeyCode.DIGIT1, KeyCode.DIGIT2, KeyCode.DIGIT3};
+         if (this.selectedLevelUpOption < digits.length) {
+            this.inputHandler.handleKeyPressed(digits[this.selectedLevelUpOption]);
+         }
+      }
       if (this.inputHandler.hasLastPressedKey()) {
          KeyCode key = this.inputHandler.consumeLastPressedKey();
          int choice = -1;
@@ -793,22 +847,35 @@ public class GameController {
       if (this.inputHandler.hasLastPressedKey()) {
          KeyCode key = this.inputHandler.consumeLastPressedKey();
          if (key == KeyCode.SPACE) {
-            this.metaProgressionManager
-               .getMetaProgression()
-               .updateStats(
-                  this.player.getCustomersSatisfied(),
-                  this.player.getSurvivalTime(),
-                  this.waveManager.getCurrentWave(),
-                  this.player.getLevel(),
-                  this.moneyEarnedThisRun
-               );
-            this.metaProgressionManager.save();
-            this.selectedMetaUpgrade = 0;
-            this.gameState = GameState.META_SHOP;
-            this.soundGenerator.startMetaShopMusic();
+            this.proceedFromGameOver();
          } else if (key == KeyCode.ESCAPE) {
             this.stage.close();
          }
+      }
+      if (this.gamepadHandler.isConfirmJustPressed()) {
+         this.proceedFromGameOver();
+      } else if (this.gamepadHandler.isBackJustPressed()) {
+         this.stage.close();
+      }
+   }
+
+   private void proceedFromGameOver() {
+      this.metaProgressionManager
+         .getMetaProgression()
+         .updateStats(
+            this.player.getCustomersSatisfied(),
+            this.player.getSurvivalTime(),
+            this.waveManager.getCurrentWave(),
+            this.player.getLevel(),
+            this.moneyEarnedThisRun
+         );
+      this.metaProgressionManager.save();
+      this.selectedMetaUpgrade = 0;
+      this.gameState = GameState.META_SHOP;
+      if (this.settings.isRetroAudio()) {
+         this.soundGenerator.startMetaShopMusic();
+      } else {
+         this.musicManager.playMetaShopMusic();
       }
    }
 
@@ -822,6 +889,9 @@ public class GameController {
             this.selectedSettingsRow = 0;
             this.gameState = GameState.SETTINGS;
          }
+      }
+      if (this.gamepadHandler.isPauseJustPressed() || this.gamepadHandler.isBackJustPressed()) {
+         this.gameState = GameState.PLAYING;
       }
    }
 
@@ -840,6 +910,21 @@ public class GameController {
          } else if (key == KeyCode.D || key == KeyCode.RIGHT) {
             this.adjustSetting(this.selectedSettingsRow, 1);
          }
+      }
+      // Gamepad navigation for settings
+      if (this.gamepadHandler.isBackJustPressed()) {
+         this.settingsManager.save(this.settings);
+         this.gameState = this.preSettingsState;
+      } else if (this.gamepadHandler.isDpadUpJustPressed()) {
+         this.selectedSettingsRow = Math.max(0, this.selectedSettingsRow - 1);
+      } else if (this.gamepadHandler.isDpadDownJustPressed()) {
+         this.selectedSettingsRow = Math.min(SettingsView.ROW_COUNT - 1, this.selectedSettingsRow + 1);
+      } else if (this.gamepadHandler.isDpadLeftJustPressed()) {
+         this.adjustSetting(this.selectedSettingsRow, -1);
+      } else if (this.gamepadHandler.isDpadRightJustPressed()) {
+         this.adjustSetting(this.selectedSettingsRow, 1);
+      } else if (this.gamepadHandler.isConfirmJustPressed()) {
+         this.adjustSetting(this.selectedSettingsRow, 1);
       }
    }
 
@@ -861,18 +946,22 @@ public class GameController {
          case 2:
             this.settings.setMusicVolume(this.settings.getMusicVolume() + direction * 0.1);
             this.soundGenerator.setMusicVolumeLevel(this.settings.getMusicVolume());
+            this.musicManager.setVolume(this.settings.getMusicVolume());
             break;
          case 3:
             this.settings.setSfxVolume(this.settings.getSfxVolume() + direction * 0.1);
             this.soundGenerator.setMasterVolume(this.settings.getSfxVolume());
+            this.sfxManager.setVolume(this.settings.getSfxVolume());
             break;
          case 4:
             this.settings.setMusicEnabled(!this.settings.isMusicEnabled());
             this.soundGenerator.setMusicEnabled(this.settings.isMusicEnabled());
+            this.musicManager.setEnabled(this.settings.isMusicEnabled());
             break;
          case 5:
             this.settings.setSfxEnabled(!this.settings.isSfxEnabled());
             this.soundGenerator.setSfxEnabled(this.settings.isSfxEnabled());
+            this.sfxManager.setEnabled(this.settings.isSfxEnabled());
             break;
          case 6:
             this.settings.setShowFPS(!this.settings.isShowFPS());
@@ -884,6 +973,13 @@ public class GameController {
          case 8:
             this.settings.setScreenShake(!this.settings.isScreenShake());
             break;
+         case 9:
+            this.settings.setGamepadEnabled(!this.settings.isGamepadEnabled());
+            this.gamepadHandler.setEnabled(this.settings.isGamepadEnabled());
+            break;
+         case 10:
+            this.settings.setRetroAudio(!this.settings.isRetroAudio());
+            break;
          default:
             break;
       }
@@ -894,6 +990,10 @@ public class GameController {
       this.soundGenerator.setMusicVolumeLevel(this.settings.getMusicVolume());
       this.soundGenerator.setSfxEnabled(this.settings.isSfxEnabled());
       this.soundGenerator.setMusicEnabled(this.settings.isMusicEnabled());
+      this.musicManager.setVolume(this.settings.getMusicVolume());
+      this.musicManager.setEnabled(this.settings.isMusicEnabled());
+      this.sfxManager.setVolume(this.settings.getSfxVolume());
+      this.sfxManager.setEnabled(this.settings.isSfxEnabled());
       this.performanceMonitor.setEnabled(this.settings.isShowFPS());
    }
 
@@ -903,6 +1003,9 @@ public class GameController {
          if (key == KeyCode.SPACE) {
             this.startTransition(GameState.PLAYING);
          }
+      }
+      if (this.gamepadHandler.isConfirmJustPressed()) {
+         this.startTransition(GameState.PLAYING);
       }
    }
 
@@ -925,16 +1028,34 @@ public class GameController {
                this.soundGenerator.playLevelUpSound();
             }
          } else if (key == KeyCode.ESCAPE) {
-            this.soundGenerator.stopMetaShopMusic();
-            this.soundGenerator.startIntroMusic();
+            this.soundGenerator.stopIntroMusic(); this.soundGenerator.stopMetaShopMusic();
             this.restartGame();
          }
+      }
+      // Gamepad navigation for meta shop
+      MetaUpgradeType[] gpUpgrades = MetaUpgradeType.values();
+      if (this.gamepadHandler.isDpadUpJustPressed()) {
+         this.selectedMetaUpgrade = Math.max(0, this.selectedMetaUpgrade - 2);
+      } else if (this.gamepadHandler.isDpadDownJustPressed()) {
+         this.selectedMetaUpgrade = Math.min(gpUpgrades.length - 1, this.selectedMetaUpgrade + 2);
+      } else if (this.gamepadHandler.isDpadLeftJustPressed()) {
+         this.selectedMetaUpgrade = Math.max(0, this.selectedMetaUpgrade - 1);
+      } else if (this.gamepadHandler.isDpadRightJustPressed()) {
+         this.selectedMetaUpgrade = Math.min(gpUpgrades.length - 1, this.selectedMetaUpgrade + 1);
+      } else if (this.gamepadHandler.isConfirmJustPressed()) {
+         MetaUpgradeType selectedType = gpUpgrades[this.selectedMetaUpgrade];
+         if (this.metaProgressionManager.getMetaProgression().purchaseUpgrade(selectedType)) {
+            this.metaProgressionManager.save();
+            this.soundGenerator.playLevelUpSound();
+         }
+      } else if (this.gamepadHandler.isBackJustPressed()) {
+         this.soundGenerator.stopIntroMusic(); this.soundGenerator.stopMetaShopMusic();
+         this.restartGame();
       }
    }
 
    private void restartGame() {
-      this.soundGenerator.stopIntroMusic();
-      this.soundGenerator.stopMetaShopMusic();
+      this.soundGenerator.stopIntroMusic(); this.soundGenerator.stopMetaShopMusic();
       this.preloaderAnimationTime = 0.0;
       this.initializeGame();
       this.camera.follow(200.0, 150.0, 1000.0, 1.0);

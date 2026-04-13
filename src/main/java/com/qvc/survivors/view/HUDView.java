@@ -1,5 +1,7 @@
 package com.qvc.survivors.view;
 
+import com.qvc.survivors.model.entity.BossEnemy;
+import com.qvc.survivors.model.entity.BoardOfDirectors;
 import com.qvc.survivors.model.entity.Player;
 import javafx.scene.paint.Color;
 
@@ -19,6 +21,48 @@ public class HUDView {
       this.renderRightHUD(player, currentWave, canvasWidth);
    }
 
+   public void renderBossHealthBar(BossEnemy boss) {
+      if (boss == null || !boss.isActive()) return;
+
+      double canvasWidth = this.gameView.getWidth();
+      double barWidth = canvasWidth * 0.6;
+      double barHeight = 20;
+      double barX = (canvasWidth - barWidth) / 2.0;
+      double barY = 10;
+
+      // Background
+      this.gameView.drawBox(barX - 2, barY - 2, barWidth + 4, barHeight + 4, Color.TRANSPARENT, Color.rgb(0, 0, 0, 0.7));
+
+      // Border
+      this.gameView.drawBox(barX, barY, barWidth, barHeight, Color.rgb(255, 50, 50), Color.rgb(40, 10, 10));
+
+      // Health fill
+      double maxHp;
+      if (boss instanceof BoardOfDirectors bod) {
+         maxHp = bod.getSubBossMaxHp();
+      } else {
+         maxHp = boss.getHealthComponent().getMaxHealth();
+      }
+      double healthPercent = boss.getHealthComponent().getCurrentHealth() / maxHp;
+      healthPercent = Math.max(0.0, Math.min(1.0, healthPercent));
+      double fillWidth = barWidth * healthPercent;
+
+      if (fillWidth > 0) {
+         Color barColor = healthPercent > 0.5 ? Color.rgb(255, 50, 50) : (healthPercent > 0.25 ? Color.ORANGE : Color.YELLOW);
+         this.gameView.drawBox(barX, barY, fillWidth, barHeight, Color.TRANSPARENT, barColor);
+         // Highlight
+         this.gameView.drawBox(barX, barY, fillWidth, barHeight / 2.0, Color.TRANSPARENT,
+               Color.rgb((int)(barColor.getRed() * 255), (int)(barColor.getGreen() * 255), (int)(barColor.getBlue() * 255), 0.3));
+      }
+
+      // Boss name
+      String bossName = boss.getBossName();
+      if (boss instanceof BoardOfDirectors bod) {
+         bossName += " - " + bod.getSubBossName();
+      }
+      this.gameView.drawText(bossName, barX + barWidth / 2.0 - bossName.length() * 4, barY + barHeight + 16, Color.rgb(255, 200, 200), 14);
+   }
+
    private void renderLeftHUD(Player player) {
       int y = 20;
       String healthText = String.format("Stamina: %.0f/%.0f", player.getHealthComponent().getCurrentHealth(), player.getHealthComponent().getMaxHealth());
@@ -35,7 +79,7 @@ public class HUDView {
       this.renderExperienceBar(player, 10, y + 5);
       if (player.isInvulnerable()) {
          y += 35;
-         String invulnText = String.format("☕ COFFEE BREAK: %.1fs", player.getInvulnerabilityTimer());
+         String invulnText = String.format("COFFEE BREAK: %.1fs", player.getInvulnerabilityTimer());
          this.gameView.drawText(invulnText, 10.0, y, Color.YELLOW, 14);
       }
    }

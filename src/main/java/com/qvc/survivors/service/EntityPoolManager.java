@@ -1,6 +1,8 @@
 package com.qvc.survivors.service;
 
 import com.qvc.survivors.model.entity.Collectible;
+import com.qvc.survivors.model.entity.EnemyType;
+import com.qvc.survivors.model.entity.GenericEnemy;
 import com.qvc.survivors.model.entity.PackageEntity;
 import com.qvc.survivors.model.entity.RegularCustomer;
 import com.qvc.survivors.model.entity.VIPCustomer;
@@ -11,6 +13,7 @@ public class EntityPoolManager {
    private final ObjectPool<RegularCustomer> regularCustomerPool = new ObjectPool<>(() -> new RegularCustomer(0.0, 0.0), 100);
    private final ObjectPool<VIPCustomer> vipCustomerPool = new ObjectPool<>(() -> new VIPCustomer(0.0, 0.0), 50);
    private final ObjectPool<Collectible> collectiblePool = new ObjectPool<>(() -> new Collectible(0.0, 0.0, 0), 150);
+   private final ObjectPool<GenericEnemy> genericEnemyPool = new ObjectPool<>(() -> new GenericEnemy(0.0, 0.0, EnemyType.REGULAR_CUSTOMER), 150);
 
    public PackageEntity obtainPackage(double x, double y, double velocityX, double velocityY, double damage) {
       PackageEntity packageEntity = this.packagePool.obtain();
@@ -42,6 +45,16 @@ public class EntityPoolManager {
       this.vipCustomerPool.free(customer);
    }
 
+   public GenericEnemy obtainGenericEnemy(double x, double y, EnemyType type) {
+      GenericEnemy enemy = this.genericEnemyPool.obtain();
+      enemy.reset(x, y, type);
+      return enemy;
+   }
+
+   public void freeGenericEnemy(GenericEnemy enemy) {
+      this.genericEnemyPool.free(enemy);
+   }
+
    public Collectible obtainCollectible(double x, double y, int value, boolean isHealthPack) {
       Collectible collectible = this.collectiblePool.obtain();
       collectible.reset(x, y, value, isHealthPack);
@@ -56,6 +69,7 @@ public class EntityPoolManager {
       this.packagePool.clear();
       this.regularCustomerPool.clear();
       this.vipCustomerPool.clear();
+      this.genericEnemyPool.clear();
       this.collectiblePool.clear();
    }
 }

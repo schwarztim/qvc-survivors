@@ -15,6 +15,8 @@ public class GameSettings {
     private boolean damageNumbers = true;
     private boolean screenShake = true;
     private String controlScheme = "WASD";
+    private boolean gamepadEnabled = true;
+    private boolean retroAudio = false;
 
     public String toJson() {
         StringBuilder sb = new StringBuilder();
@@ -29,7 +31,9 @@ public class GameSettings {
         sb.append("  \"showFPS\": ").append(showFPS).append(",\n");
         sb.append("  \"damageNumbers\": ").append(damageNumbers).append(",\n");
         sb.append("  \"screenShake\": ").append(screenShake).append(",\n");
-        sb.append("  \"controlScheme\": \"").append(controlScheme).append("\"\n");
+        sb.append("  \"controlScheme\": \"").append(controlScheme).append("\",\n");
+        sb.append("  \"gamepadEnabled\": ").append(gamepadEnabled).append(",\n");
+        sb.append("  \"retroAudio\": ").append(retroAudio).append("\n");
         sb.append("}");
         return sb.toString();
     }
@@ -48,6 +52,8 @@ public class GameSettings {
         if (pairs.containsKey("damageNumbers")) s.damageNumbers = Boolean.parseBoolean(pairs.get("damageNumbers"));
         if (pairs.containsKey("screenShake")) s.screenShake = Boolean.parseBoolean(pairs.get("screenShake"));
         if (pairs.containsKey("controlScheme")) s.controlScheme = pairs.get("controlScheme");
+        if (pairs.containsKey("gamepadEnabled")) s.gamepadEnabled = Boolean.parseBoolean(pairs.get("gamepadEnabled"));
+        if (pairs.containsKey("retroAudio")) s.retroAudio = Boolean.parseBoolean(pairs.get("retroAudio"));
         return s;
     }
 
@@ -89,4 +95,8 @@ public class GameSettings {
     public void setScreenShake(boolean screenShake) { this.screenShake = screenShake; }
     public String getControlScheme() { return controlScheme; }
     public void setControlScheme(String controlScheme) { this.controlScheme = controlScheme; }
+    public boolean isGamepadEnabled() { return gamepadEnabled; }
+    public void setGamepadEnabled(boolean gamepadEnabled) { this.gamepadEnabled = gamepadEnabled; }
+    public boolean isRetroAudio() { return retroAudio; }
+    public void setRetroAudio(boolean retroAudio) { this.retroAudio = retroAudio; }
 }

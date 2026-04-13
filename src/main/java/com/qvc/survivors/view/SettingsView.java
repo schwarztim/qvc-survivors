@@ -15,7 +15,7 @@ public class SettingsView {
         {1200, 750}, {1280, 720}, {1600, 900}, {1920, 1080}
     };
 
-    public static final int ROW_COUNT = 9;
+    public static final int ROW_COUNT = 10;
 
     private final GameView gameView;
 
@@ -30,7 +30,7 @@ public class SettingsView {
         this.gameView.drawBox(0.0, 0.0, canvasWidth, canvasHeight, Color.TRANSPARENT, OVERLAY_COLOR);
 
         double boxWidth = 550.0;
-        double boxHeight = 420.0;
+        double boxHeight = 454.0;
         double boxX = (canvasWidth - boxWidth) / 2.0;
         double boxY = (canvasHeight - boxHeight) / 2.0;
 
@@ -53,6 +53,7 @@ public class SettingsView {
         labels[6] = "Show FPS: " + (settings.isShowFPS() ? "ON" : "OFF") + " < >";
         labels[7] = "Damage Numbers: " + (settings.isDamageNumbers() ? "ON" : "OFF") + " < >";
         labels[8] = "Screen Shake: " + (settings.isScreenShake() ? "ON" : "OFF") + " < >";
+        labels[9] = "Gamepad: " + (settings.isGamepadEnabled() ? "ON" : "OFF") + " < >";
 
         for (int i = 0; i < ROW_COUNT; i++) {
             Color rowColor = (i == selectedRow) ? ACCENT_COLOR : TEXT_COLOR;
