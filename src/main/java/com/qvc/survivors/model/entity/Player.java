@@ -12,7 +12,7 @@ import lombok.Generated;
 
 public class Player extends Entity {
    private static final double PLAYER_SIZE = 1.0;
-   private static final double PLAYER_SPEED = 35.0;
+   private static final double PLAYER_SPEED = 14.0;
    private final HealthComponent healthComponent;
    private final MovementComponent movementComponent;
    private final PlayerStats stats = new PlayerStats();

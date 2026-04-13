@@ -31,7 +31,7 @@ public class GamepadHandler {
     private boolean enabled = true;
     private ControllerMapping mapping;
     private double rescanTimer = 0;
-    private boolean firstReport = true;
+    private int debugReportCount = 0;
     private static final double RESCAN_INTERVAL = 3.0;
 
     // Stick axes (-1.0 to 1.0)
@@ -72,7 +72,7 @@ public class GamepadHandler {
                     this.device = dev;
                     this.mapping = ControllerMapping.detect(vid, pid);
                     this.available = true;
-                    this.firstReport = true;
+                    this.debugReportCount = 0;
                     log.info("Gamepad connected: {} (VID:{} PID:{})", dev.getProduct(),
                             String.format("0x%04X", vid), String.format("0x%04X", pid));
                     return;
@@ -84,7 +84,7 @@ public class GamepadHandler {
                     this.device = dev;
                     this.mapping = ControllerMapping.detect(vid, pid);
                     this.available = true;
-                    this.firstReport = true;
+                    this.debugReportCount = 0;
                     log.info("Generic gamepad connected: {} (VID:{} PID:{})", dev.getProduct(),
                             String.format("0x%04X", vid), String.format("0x%04X", pid));
                     return;
@@ -131,14 +131,15 @@ public class GamepadHandler {
         }
         if (bytesRead == 0) return;
 
-        // Debug: log first report for mapping diagnosis
-        if (firstReport) {
-            StringBuilder sb = new StringBuilder("First HID report (").append(bytesRead).append(" bytes): ");
-            for (int i = 0; i < Math.min(bytesRead, 20); i++) {
+        // Debug: log first 10 reports for mapping diagnosis
+        if (debugReportCount < 10) {
+            debugReportCount++;
+            StringBuilder sb = new StringBuilder("HID report #").append(debugReportCount)
+                .append(" (").append(bytesRead).append("B, ").append(mapping.type).append("): ");
+            for (int i = 0; i < Math.min(bytesRead, 24); i++) {
                 sb.append(String.format("%02X ", report[i]));
             }
             log.info(sb.toString());
-            firstReport = false;
         }
 
         // Parse report using controller-specific mapping
@@ -320,6 +321,10 @@ public class GamepadHandler {
                 h.buttonY = (buttons & 0x08) != 0;
                 h.buttonStart = (buttons & 0x10) != 0;
                 h.buttonSelect = (buttons & 0x20) != 0;
+            }
+            if (offset + 6 < length) {
+                int hat = r[offset + 5] & 0x0F;
+                parseHat(hat, h);
             }
         }
 
