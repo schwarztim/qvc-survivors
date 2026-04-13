@@ -13,9 +13,24 @@ import java.util.List;
 public class CollisionManager {
    private static final int SPATIAL_GRID_CELL_SIZE = 5;
    private final SpatialGrid spatialGrid;
+   private final SpatialGrid enemyGrid;
 
    public CollisionManager(int worldWidth, int worldHeight) {
       this.spatialGrid = new SpatialGrid(worldWidth, worldHeight, 5);
+      this.enemyGrid = new SpatialGrid(worldWidth, worldHeight, 5);
+   }
+
+   public void buildEnemyGrid(List<Enemy> enemies) {
+      this.enemyGrid.clear();
+      for (Enemy enemy : enemies) {
+         if (enemy.isActive()) {
+            this.enemyGrid.insert(enemy);
+         }
+      }
+   }
+
+   public List<Entity> queryEnemiesNear(Entity entity) {
+      return this.enemyGrid.query(entity);
    }
 
    public boolean checkCollision(Entity entity1, Entity entity2) {

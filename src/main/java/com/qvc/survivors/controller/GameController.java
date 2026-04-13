@@ -320,15 +320,11 @@ public class GameController {
             this.gameState = GameState.SETTINGS;
          }
       }
-      if (this.gamepadHandler.isConfirmJustPressed()) {
+      if (this.gamepadHandler.isConfirmJustPressed() || this.gamepadHandler.isPauseJustPressed()) {
          GameState nextState = this.isFirstGame ? GameState.TUTORIAL : GameState.CHARACTER_SELECT;
          this.isFirstGame = false;
          this.selectedCharacter = 0;
          this.startTransition(nextState);
-      } else if (this.gamepadHandler.isPauseJustPressed()) {
-         this.preSettingsState = GameState.PRELOADER;
-         this.selectedSettingsRow = 0;
-         this.gameState = GameState.SETTINGS;
       }
    }
 
@@ -580,6 +576,11 @@ public class GameController {
       // Gamepad left stick (additive)
       dirX += this.gamepadHandler.getMoveX();
       dirY += this.gamepadHandler.getMoveY();
+      // Gamepad D-pad movement
+      if (this.gamepadHandler.isDpadUp()) dirY -= 1.0;
+      if (this.gamepadHandler.isDpadDown()) dirY += 1.0;
+      if (this.gamepadHandler.isDpadLeft()) dirX -= 1.0;
+      if (this.gamepadHandler.isDpadRight()) dirX += 1.0;
 
       // Clamp to unit circle
       double len = Math.sqrt(dirX * dirX + dirY * dirY);
@@ -856,7 +857,7 @@ public class GameController {
                double spawnY = ep.getY() + Math.sin(angle) * 3.0;
                spawnX = Math.max(0, Math.min(399, spawnX));
                spawnY = Math.max(0, Math.min(299, spawnY));
-               Enemy minion = this.entityPoolManager.obtainRegularCustomer(spawnX, spawnY);
+               Enemy minion = this.entityPoolManager.obtainGenericEnemy(spawnX, spawnY, EnemyType.REGULAR_CUSTOMER);
                this.enemies.add(minion);
             }
          }
@@ -893,7 +894,7 @@ public class GameController {
                if (Math.random() < 0.5) {
                   double sx = Math.max(0, Math.min(399, portal[0]));
                   double sy = Math.max(0, Math.min(299, portal[1]));
-                  Enemy minion = this.entityPoolManager.obtainRegularCustomer(sx, sy);
+                  Enemy minion = this.entityPoolManager.obtainGenericEnemy(sx, sy, EnemyType.REGULAR_CUSTOMER);
                   this.enemies.add(minion);
                }
             }
@@ -1246,7 +1247,7 @@ public class GameController {
             this.stage.close();
          }
       }
-      if (this.gamepadHandler.isConfirmJustPressed()) {
+      if (this.gamepadHandler.isConfirmJustPressed() || this.gamepadHandler.isPauseJustPressed()) {
          this.proceedFromGameOver();
       } else if (this.gamepadHandler.isBackJustPressed()) {
          this.stage.close();
@@ -1400,7 +1401,7 @@ public class GameController {
             this.startTransition(GameState.CHARACTER_SELECT);
          }
       }
-      if (this.gamepadHandler.isConfirmJustPressed()) {
+      if (this.gamepadHandler.isConfirmJustPressed() || this.gamepadHandler.isPauseJustPressed()) {
          this.selectedCharacter = 0;
          this.startTransition(GameState.CHARACTER_SELECT);
       }
@@ -1422,7 +1423,7 @@ public class GameController {
          this.selectedCharacter = Math.max(0, this.selectedCharacter - 1);
       } else if (this.gamepadHandler.isDpadRightJustPressed()) {
          this.selectedCharacter = Math.min(chars.length - 1, this.selectedCharacter + 1);
-      } else if (this.gamepadHandler.isConfirmJustPressed()) {
+      } else if (this.gamepadHandler.isConfirmJustPressed() || this.gamepadHandler.isPauseJustPressed()) {
          this.confirmCharacterSelection(chars[this.selectedCharacter]);
       }
    }
@@ -1663,7 +1664,7 @@ public class GameController {
       // Render shockwaves
       for (ShockwaveEffect sw : this.shockwaves) {
          if (sw.isActive() && this.camera.isInView(sw.getX(), sw.getY(), (int)sw.getMaxRadius())) {
-            this.gameView.drawShockwave(sw.getX(), sw.getY(), sw.getCurrentRadius(), sw.getProgress());
+            this.gameView.drawShockwave(sw.getX(), sw.getY(), sw.getCurrentRadius(), sw.getProgress(), sw.getColor());
          }
       }
 

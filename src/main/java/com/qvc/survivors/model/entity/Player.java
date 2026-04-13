@@ -12,7 +12,7 @@ import lombok.Generated;
 
 public class Player extends Entity {
    private static final double PLAYER_SIZE = 1.0;
-   private static final double PLAYER_SPEED = 14.0;
+   private static final double PLAYER_SPEED = 35.0;
    private final HealthComponent healthComponent;
    private final MovementComponent movementComponent;
    private final PlayerStats stats = new PlayerStats();
@@ -26,7 +26,6 @@ public class Player extends Entity {
    private double damageFlashTimer;
    private double survivalTime;
    private double facingAngle;
-   private double fireTimer;
    private double invulnerabilityTimer;
    private double coffeeBreakTimer;
    private boolean employeeDiscountActive;
@@ -40,14 +39,13 @@ public class Player extends Entity {
       this.xpMultiplier = 1.0 + (metaProgression != null ? metaProgression.getUpgradeValue(MetaUpgradeType.XP_MULTIPLIER) / 100.0 : 0.0);
       this.applyMetaUpgrades(metaProgression);
       this.healthComponent = new HealthComponent(this.stats.getStat(StatModifier.MAX_HEALTH));
-      this.movementComponent = new MovementComponent(35.0 + this.getMetaSpeedBonus(metaProgression));
+      this.movementComponent = new MovementComponent(PLAYER_SPEED + this.getMetaSpeedBonus(metaProgression));
       this.level = 1;
       this.experience = 0.0;
       this.experienceThreshold = 5.0;
       this.money = 0;
       this.customersSatisfied = 0;
       this.survivalTime = 0.0;
-      this.fireTimer = 0.0;
       this.invulnerabilityTimer = 0.0;
       this.damageFlashTimer = 0.0;
       this.coffeeBreakTimer = 0.0;
@@ -87,7 +85,6 @@ public class Player extends Entity {
          this.facingAngle = Math.atan2(this.movementComponent.getVelocityY(), this.movementComponent.getVelocityX());
       }
       this.survivalTime += deltaTime;
-      this.fireTimer += deltaTime;
       if (this.invulnerabilityTimer > 0.0) {
          this.invulnerabilityTimer -= deltaTime;
       }
@@ -135,19 +132,6 @@ public class Player extends Entity {
             this.active = false;
          }
       }
-   }
-
-   public boolean canFire() {
-      double fireRate = this.stats.getStat(StatModifier.FIRE_RATE);
-      if (this.coffeeBreakTimer > 0.0) {
-         fireRate *= 1.5;
-      }
-      double fireInterval = 1.0 / fireRate;
-      return this.fireTimer >= fireInterval;
-   }
-
-   public void resetFireTimer() {
-      this.fireTimer = 0.0;
    }
 
    public void incrementCustomersSatisfied() {
@@ -262,11 +246,6 @@ public class Player extends Entity {
    }
 
    @Generated
-   public double getFireTimer() {
-      return this.fireTimer;
-   }
-
-   @Generated
    public double getInvulnerabilityTimer() {
       return this.invulnerabilityTimer;
    }
@@ -304,11 +283,6 @@ public class Player extends Entity {
    @Generated
    public void setSurvivalTime(double survivalTime) {
       this.survivalTime = survivalTime;
-   }
-
-   @Generated
-   public void setFireTimer(double fireTimer) {
-      this.fireTimer = fireTimer;
    }
 
    @Generated

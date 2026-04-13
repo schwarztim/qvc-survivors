@@ -10,7 +10,6 @@ import java.util.List;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.effect.BlendMode;
-import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.RadialGradient;
@@ -39,14 +38,6 @@ public class GameView extends Canvas {
    private long cachedFrameTime;
    private Camera camera;
    private TileMap tileMap;
-   private WritableImage tileCache;
-   private int tileCacheFirstCol = -1;
-   private int tileCacheFirstRow = -1;
-   private int tileCacheLastCol = -1;
-   private int tileCacheLastRow = -1;
-   private WritableImage scanlineCache;
-   private int scanlineCacheWidth = -1;
-   private int scanlineCacheHeight = -1;
    private final List<double[]> pendingGlows = new ArrayList<>();
 
    public GameView(int gridWidth, int gridHeight, double viewportWidth, double viewportHeight) {
@@ -67,14 +58,11 @@ public class GameView extends Canvas {
 
    public void setTileMap(TileMap tileMap) {
       this.tileMap = tileMap;
-      this.tileCache = null;
    }
 
    public void resizeCanvas(double width, double height) {
       this.setWidth(width);
       this.setHeight(height);
-      this.tileCache = null;
-      this.scanlineCache = null;
    }
 
    private void initializeNebulaGradients() {
@@ -178,22 +166,11 @@ public class GameView extends Canvas {
    }
 
    private void drawScanlines() {
-      int w = (int) this.getWidth();
-      int h = (int) this.getHeight();
-      if (w <= 0 || h <= 0) return;
-      if (this.scanlineCache == null || this.scanlineCacheWidth != w || this.scanlineCacheHeight != h) {
-         this.scanlineCacheWidth = w;
-         this.scanlineCacheHeight = h;
-         Canvas offscreen = new Canvas(w, h);
-         GraphicsContext ogc = offscreen.getGraphicsContext2D();
-         ogc.setStroke(Color.rgb(255, 255, 255, 0.015));
-         ogc.setLineWidth(1.0);
-         for (int i = 0; i < h; i += 4) {
-            ogc.strokeLine(0.0, i, w, i);
-         }
-         this.scanlineCache = offscreen.snapshot(null, null);
+      this.graphicsContext.setStroke(Color.rgb(0, 0, 0, 0.03));
+      this.graphicsContext.setLineWidth(1.0);
+      for (double y = 0; y < this.getHeight(); y += 4) {
+         this.graphicsContext.strokeLine(0, y, this.getWidth(), y);
       }
-      this.graphicsContext.drawImage(this.scanlineCache, 0, 0);
    }
 
    private void drawTileMap() {
@@ -202,52 +179,24 @@ public class GameView extends Canvas {
       int firstRow = Math.max(0, (int) Math.floor(camera.screenToWorldY(0)));
       int lastRow = Math.min(this.tileMap.getHeight() - 1, (int) Math.ceil(camera.screenToWorldY(this.getHeight())));
 
-      boolean cacheValid = this.tileCache != null
-         && firstCol == this.tileCacheFirstCol
-         && firstRow == this.tileCacheFirstRow
-         && lastCol == this.tileCacheLastCol
-         && lastRow == this.tileCacheLastRow;
-
-      if (!cacheValid) {
-         this.tileCacheFirstCol = firstCol;
-         this.tileCacheFirstRow = firstRow;
-         this.tileCacheLastCol = lastCol;
-         this.tileCacheLastRow = lastRow;
-
-         int cols = lastCol - firstCol + 1;
-         int rows = lastRow - firstRow + 1;
-         if (cols <= 0 || rows <= 0) return;
-         int imgW = cols * TILE_SIZE;
-         int imgH = rows * TILE_SIZE;
-
-         Canvas offscreen = new Canvas(imgW, imgH);
-         GraphicsContext ogc = offscreen.getGraphicsContext2D();
-         ogc.setImageSmoothing(false);
-
-         for (int tx = firstCol; tx <= lastCol; tx++) {
-            for (int ty = firstRow; ty <= lastRow; ty++) {
-               TileType tile = this.tileMap.getTile(tx, ty);
-               double ox = (tx - firstCol) * TILE_SIZE;
-               double oy = (ty - firstRow) * TILE_SIZE;
-               ogc.setFill(tile.getBaseColor());
-               ogc.fillRect(ox, oy, TILE_SIZE, TILE_SIZE);
-               if (tile == TileType.WALL) {
-                  ogc.setStroke(tile.getGridColor());
-                  ogc.setLineWidth(1.5);
-                  ogc.strokeRect(ox + 0.5, oy + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
-               } else {
-                  ogc.setStroke(tile.getGridColor());
-                  ogc.setLineWidth(0.5);
-                  ogc.strokeRect(ox, oy, TILE_SIZE, TILE_SIZE);
-               }
+      for (int tx = firstCol; tx <= lastCol; tx++) {
+         for (int ty = firstRow; ty <= lastRow; ty++) {
+            TileType tile = this.tileMap.getTile(tx, ty);
+            double screenX = camera.worldToScreenX(tx);
+            double screenY = camera.worldToScreenY(ty);
+            this.graphicsContext.setFill(tile.getBaseColor());
+            this.graphicsContext.fillRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
+            if (tile == TileType.WALL) {
+               this.graphicsContext.setStroke(tile.getGridColor());
+               this.graphicsContext.setLineWidth(1.5);
+               this.graphicsContext.strokeRect(screenX + 0.5, screenY + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
+            } else {
+               this.graphicsContext.setStroke(tile.getGridColor());
+               this.graphicsContext.setLineWidth(0.5);
+               this.graphicsContext.strokeRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
             }
          }
-         this.tileCache = offscreen.snapshot(null, null);
       }
-
-      double screenX = camera.worldToScreenX(firstCol);
-      double screenY = camera.worldToScreenY(firstRow);
-      this.graphicsContext.drawImage(this.tileCache, screenX, screenY);
    }
 
    public void drawMapCollectible(double x, double y, MapCollectibleType type, double pulse) {
@@ -289,27 +238,34 @@ public class GameView extends Canvas {
       double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + 7.5;
       double centerY = pixelY + 7.5;
-      double boxSize = 12.0;
+      double bs = 12.0;
       this.drawGlowEffect(centerX, centerY, color, glowIntensity);
       double rotation = this.cachedFrameTime * 0.005;
       this.graphicsContext.save();
       this.graphicsContext.translate(centerX, centerY);
       this.graphicsContext.rotate(Math.toDegrees(rotation));
-      Color boxColor = color.darker();
-      this.graphicsContext.setFill(boxColor);
-      this.graphicsContext.fillRect(-boxSize / 2.0, -boxSize / 2.0, boxSize, boxSize);
-      this.graphicsContext.setStroke(color);
-      this.graphicsContext.setLineWidth(2.0);
-      this.graphicsContext.strokeRect(-boxSize / 2.0, -boxSize / 2.0, boxSize, boxSize);
-      this.graphicsContext.setStroke(color.brighter());
-      this.graphicsContext.setLineWidth(1.0);
-      this.graphicsContext.strokeLine(-boxSize / 2.0, 0.0, boxSize / 2.0, 0.0);
-      this.graphicsContext.strokeLine(0.0, -boxSize / 2.0, 0.0, boxSize / 2.0);
+      // Cardboard box body
+      Color cardboard = Color.rgb(180, 150, 100);
+      Color shadow = Color.rgb(140, 110, 70);
+      this.graphicsContext.setFill(cardboard);
+      this.graphicsContext.fillRect(-bs/2, -bs/2, bs, bs);
+      // Top-flap shading
+      this.graphicsContext.setFill(cardboard.brighter());
+      this.graphicsContext.fillRect(-bs/2, -bs/2, bs, bs * 0.3);
+      // Box outline
+      this.graphicsContext.setStroke(shadow);
+      this.graphicsContext.setLineWidth(1.5);
+      this.graphicsContext.strokeRect(-bs/2, -bs/2, bs, bs);
+      // Tape: horizontal and vertical strips (brown tape)
+      this.graphicsContext.setStroke(Color.rgb(200, 170, 90));
+      this.graphicsContext.setLineWidth(2.5);
+      this.graphicsContext.strokeLine(-bs/2, 0, bs/2, 0);         // horizontal tape
+      this.graphicsContext.strokeLine(0, -bs/2, 0, bs/2);          // vertical tape
       this.graphicsContext.restore();
       this.graphicsContext.save();
       this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
-      this.graphicsContext.setFill(color.brighter());
-      this.graphicsContext.fillRect(centerX - boxSize / 2.0, centerY - boxSize / 2.0, boxSize, boxSize / 3.0);
+      this.graphicsContext.setFill(Color.rgb(255, 200, 100, 0.3));
+      this.graphicsContext.fillRect(centerX - bs/2, centerY - bs/2, bs, bs/3);
       this.graphicsContext.restore();
    }
 
@@ -319,18 +275,42 @@ public class GameView extends Canvas {
       double centerX = pixelX + 7.5;
       double centerY = pixelY + 7.5;
       this.drawGlowEffect(centerX, centerY, color, glowIntensity);
-      double size = 13.5;
+      double s = 13.5;
+      double headR = s * 0.28;
       this.graphicsContext.save();
       this.graphicsContext.translate(centerX, centerY);
-      this.graphicsContext.setFill(color.darker());
-      this.graphicsContext.fillOval(-size / 2.0, -size / 2.0, size, size);
+      // Head
+      this.graphicsContext.setFill(Color.rgb(255, 220, 180));
+      this.graphicsContext.fillOval(-headR, -s * 0.5, headR * 2, headR * 2);
       this.graphicsContext.setStroke(color);
-      this.graphicsContext.setLineWidth(2.5);
-      this.graphicsContext.strokeOval(-size / 2.0, -size / 2.0, size, size);
-      this.graphicsContext.setFill(color.brighter());
-      this.graphicsContext.fillText("Q", -5.0, 3.75);
+      this.graphicsContext.setLineWidth(1.5);
+      this.graphicsContext.strokeOval(-headR, -s * 0.5, headR * 2, headR * 2);
+      // Body (blazer)
+      this.graphicsContext.setFill(color.darker());
+      this.graphicsContext.fillRect(-s * 0.28, -s * 0.5 + headR * 2, s * 0.56, s * 0.42);
+      this.graphicsContext.setStroke(color);
+      this.graphicsContext.setLineWidth(1.5);
+      this.graphicsContext.strokeRect(-s * 0.28, -s * 0.5 + headR * 2, s * 0.56, s * 0.42);
+      // Microphone arm (extended right)
+      this.graphicsContext.setStroke(color.brighter());
+      this.graphicsContext.setLineWidth(1.5);
+      double micArmY = -s * 0.5 + headR * 2 + s * 0.12;
+      this.graphicsContext.strokeLine(s * 0.28, micArmY, s * 0.55, micArmY - s * 0.18);
+      // Mic head (ball)
+      this.graphicsContext.setFill(Color.SILVER);
+      this.graphicsContext.fillOval(s * 0.5, micArmY - s * 0.25, s * 0.14, s * 0.14);
+      this.graphicsContext.setStroke(Color.LIGHTGRAY);
+      this.graphicsContext.setLineWidth(1.0);
+      this.graphicsContext.strokeOval(s * 0.5, micArmY - s * 0.25, s * 0.14, s * 0.14);
+      // Legs
+      this.graphicsContext.setStroke(color.darker());
+      this.graphicsContext.setLineWidth(2.0);
+      double legTop = -s * 0.5 + headR * 2 + s * 0.42;
+      this.graphicsContext.strokeLine(-s * 0.12, legTop, -s * 0.16, s * 0.5);
+      this.graphicsContext.strokeLine(s * 0.12, legTop, s * 0.16, s * 0.5);
+      // Pulsing shield ring
       double pulseTime = this.cachedFrameTime * 0.003;
-      double shieldRadius = size / 2.0 + 2.0 + Math.sin(pulseTime) * 2.0;
+      double shieldRadius = s / 2.0 + 3.0 + Math.sin(pulseTime) * 2.0;
       this.graphicsContext.setStroke(color.brighter());
       this.graphicsContext.setLineWidth(1.5);
       this.graphicsContext.strokeOval(-shieldRadius, -shieldRadius, shieldRadius * 2.0, shieldRadius * 2.0);
@@ -338,7 +318,7 @@ public class GameView extends Canvas {
       this.graphicsContext.save();
       this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
       this.graphicsContext.setFill(color.brighter());
-      this.graphicsContext.fillOval(centerX - size / 4.0, centerY - size / 3.0, size / 3.0, size / 3.0);
+      this.graphicsContext.fillOval(centerX - s / 4.0, centerY - s / 3.0, s / 3.0, s / 3.0);
       this.graphicsContext.restore();
    }
 
@@ -577,27 +557,48 @@ public class GameView extends Canvas {
    }
 
    public void drawShockwave(double x, double y, double currentRadius, double progress) {
+      drawShockwave(x, y, currentRadius, progress, null);
+   }
+
+   public void drawShockwave(double x, double y, double currentRadius, double progress, Color shockColor) {
       double pixelX = camera.worldToScreenX(x);
       double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + TILE_SIZE_HALF;
       double centerY = pixelY + TILE_SIZE_HALF;
       double pixelRadius = currentRadius;
       double alpha = Math.max(0.0, 1.0 - progress);
+      Color c = shockColor != null ? shockColor : Color.MEDIUMPURPLE;
 
       this.graphicsContext.save();
 
       // Outer ring
       this.graphicsContext.setGlobalAlpha(alpha * 0.6);
-      this.graphicsContext.setStroke(Color.MEDIUMPURPLE);
+      this.graphicsContext.setStroke(c);
       this.graphicsContext.setLineWidth(3.0);
       this.graphicsContext.strokeOval(centerX - pixelRadius, centerY - pixelRadius,
               pixelRadius * 2, pixelRadius * 2);
 
       // Inner fill
       this.graphicsContext.setGlobalAlpha(alpha * 0.15);
-      this.graphicsContext.setFill(Color.MEDIUMPURPLE);
+      this.graphicsContext.setFill(c);
       this.graphicsContext.fillOval(centerX - pixelRadius, centerY - pixelRadius,
               pixelRadius * 2, pixelRadius * 2);
+
+      // Lightning effect for yellow/FlashSale shockwaves
+      if (shockColor != null && shockColor.getRed() > 0.8 && shockColor.getGreen() > 0.8 && shockColor.getBlue() < 0.3) {
+         this.graphicsContext.setGlobalAlpha(alpha * 0.8);
+         this.graphicsContext.setStroke(Color.WHITE);
+         this.graphicsContext.setLineWidth(1.5);
+         java.util.Random rng = new java.util.Random((long)(progress * 100));
+         for (int i = 0; i < 4; i++) {
+            double angle = (Math.PI * 2 / 4) * i + progress * 2;
+            double zx1 = centerX + Math.cos(angle) * pixelRadius * 0.5;
+            double zy1 = centerY + Math.sin(angle) * pixelRadius * 0.5;
+            double zx2 = centerX + Math.cos(angle) * pixelRadius + (rng.nextDouble() - 0.5) * 10;
+            double zy2 = centerY + Math.sin(angle) * pixelRadius + (rng.nextDouble() - 0.5) * 10;
+            this.graphicsContext.strokeLine(zx1, zy1, zx2, zy2);
+         }
+      }
 
       this.graphicsContext.restore();
    }
@@ -974,57 +975,247 @@ public class GameView extends Canvas {
       double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + TILE_SIZE_HALF;
       double centerY = pixelY + TILE_SIZE_HALF;
-      double baseSize = 30.0;
+      double s = 30.0;
 
-      // Large glow
-      this.drawGlowEffect(centerX, centerY, color, glowIntensity);
+      this.drawGlowEffect(centerX, centerY, color, glowIntensity * 1.5);
+
+      // Rage pulse when low health
+      if (healthPercent < 0.5) {
+         double rageAlpha = (0.5 - healthPercent) * 2.0;
+         double ragePulse = 0.5 + 0.5 * Math.sin(this.cachedFrameTime * 0.01);
+         this.graphicsContext.save();
+         this.graphicsContext.setGlobalAlpha(rageAlpha * ragePulse * 0.25);
+         this.graphicsContext.setFill(Color.RED);
+         this.graphicsContext.fillOval(centerX - s, centerY - s, s * 2, s * 2);
+         this.graphicsContext.restore();
+      }
 
       this.graphicsContext.save();
       this.graphicsContext.translate(centerX, centerY);
 
-      // Main body - larger oval
-      this.graphicsContext.setFill(color.darker().darker());
-      this.graphicsContext.fillOval(-baseSize/2, -baseSize/2.2, baseSize, baseSize * 1.1);
-      this.graphicsContext.setStroke(color);
-      this.graphicsContext.setLineWidth(3.0);
-      this.graphicsContext.strokeOval(-baseSize/2, -baseSize/2.2, baseSize, baseSize * 1.1);
+      switch (bossType) {
+         case "Executive Producer" -> {
+            // Dark suit, red tie, briefcase
+            double headR = s * 0.22;
+            this.graphicsContext.setFill(Color.rgb(255, 220, 180));
+            this.graphicsContext.fillOval(-headR, -s * 0.55, headR * 2, headR * 2);
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(2.0);
+            this.graphicsContext.strokeOval(-headR, -s * 0.55, headR * 2, headR * 2);
+            // Slicked hair
+            this.graphicsContext.setFill(Color.rgb(30, 20, 10));
+            this.graphicsContext.fillRect(-headR, -s * 0.55, headR * 2, headR * 0.7);
+            // Dark suit body
+            this.graphicsContext.setFill(Color.rgb(40, 40, 50));
+            this.graphicsContext.fillRect(-s * 0.3, -s * 0.55 + headR * 2, s * 0.6, s * 0.55);
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(2.0);
+            this.graphicsContext.strokeRect(-s * 0.3, -s * 0.55 + headR * 2, s * 0.6, s * 0.55);
+            // Shirt + red tie
+            this.graphicsContext.setFill(Color.WHITE);
+            this.graphicsContext.fillRect(-s * 0.1, -s * 0.55 + headR * 2, s * 0.2, s * 0.3);
+            this.graphicsContext.setFill(Color.RED);
+            this.graphicsContext.fillPolygon(
+               new double[]{-s * 0.04, s * 0.04, s * 0.02, -s * 0.02},
+               new double[]{-s * 0.55 + headR * 2, -s * 0.55 + headR * 2, -s * 0.55 + headR * 2 + s * 0.28, -s * 0.55 + headR * 2 + s * 0.28}, 4);
+            // Briefcase (right side)
+            this.graphicsContext.setFill(Color.rgb(100, 70, 30));
+            this.graphicsContext.fillRect(s * 0.32, -s * 0.1, s * 0.22, s * 0.22);
+            this.graphicsContext.setStroke(Color.rgb(150, 110, 50));
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeRect(s * 0.32, -s * 0.1, s * 0.22, s * 0.22);
+            this.graphicsContext.strokeLine(s * 0.38, -s * 0.1, s * 0.38, -s * 0.1 - s * 0.06); // handle
+            this.graphicsContext.strokeLine(s * 0.49, -s * 0.1, s * 0.49, -s * 0.1 - s * 0.06);
+            this.graphicsContext.strokeLine(s * 0.38, -s * 0.16, s * 0.49, -s * 0.16);
+            // Legs
+            this.graphicsContext.setStroke(Color.rgb(40, 40, 50));
+            this.graphicsContext.setLineWidth(2.5);
+            double legTop = -s * 0.55 + headR * 2 + s * 0.55;
+            this.graphicsContext.strokeLine(-s * 0.15, legTop, -s * 0.18, s * 0.5);
+            this.graphicsContext.strokeLine(s * 0.15, legTop, s * 0.18, s * 0.5);
+            // Gold "BOSS" indicator crown
+            this.graphicsContext.setFill(Color.GOLD);
+            double cw = s * 0.35;
+            this.graphicsContext.fillPolygon(
+               new double[]{-cw, -cw/2, 0, cw/2, cw},
+               new double[]{-s * 0.55, -s * 0.7, -s * 0.6, -s * 0.7, -s * 0.55}, 5);
+         }
 
-      // Inner detail
-      this.graphicsContext.setFill(color.darker());
-      this.graphicsContext.fillOval(-baseSize/3, -baseSize/3, baseSize/1.5, baseSize/1.5);
+         case "Warehouse Manager" -> {
+            // Yellow hard hat, clipboard, bulky figure
+            double headR = s * 0.22;
+            this.graphicsContext.setFill(Color.rgb(255, 220, 180));
+            this.graphicsContext.fillOval(-headR, -s * 0.45, headR * 2, headR * 2);
+            // Hard hat
+            this.graphicsContext.setFill(Color.YELLOW);
+            this.graphicsContext.fillArc(-headR - 4, -s * 0.55, headR * 2 + 8, headR * 1.6, 0, 180, javafx.scene.shape.ArcType.ROUND);
+            this.graphicsContext.setStroke(Color.rgb(180, 150, 0));
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeArc(-headR - 4, -s * 0.55, headR * 2 + 8, headR * 1.6, 0, 180, javafx.scene.shape.ArcType.OPEN);
+            // Wide body (hi-vis vest)
+            this.graphicsContext.setFill(color.darker());
+            this.graphicsContext.fillRect(-s * 0.35, -s * 0.45 + headR * 2, s * 0.7, s * 0.5);
+            // Orange hi-vis stripes
+            this.graphicsContext.setStroke(Color.ORANGE);
+            this.graphicsContext.setLineWidth(2.5);
+            this.graphicsContext.strokeLine(-s * 0.35, -s * 0.45 + headR * 2 + s * 0.15, s * 0.35, -s * 0.45 + headR * 2 + s * 0.15);
+            this.graphicsContext.strokeLine(-s * 0.35, -s * 0.45 + headR * 2 + s * 0.28, s * 0.35, -s * 0.45 + headR * 2 + s * 0.28);
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(2.0);
+            this.graphicsContext.strokeRect(-s * 0.35, -s * 0.45 + headR * 2, s * 0.7, s * 0.5);
+            // Clipboard (left side)
+            this.graphicsContext.setFill(Color.rgb(220, 210, 180));
+            this.graphicsContext.fillRect(-s * 0.6, -s * 0.2, s * 0.22, s * 0.3);
+            this.graphicsContext.setStroke(Color.GRAY);
+            this.graphicsContext.setLineWidth(1.0);
+            this.graphicsContext.strokeRect(-s * 0.6, -s * 0.2, s * 0.22, s * 0.3);
+            this.graphicsContext.strokeLine(-s * 0.58, -s * 0.13, -s * 0.41, -s * 0.13); // lines on clipboard
+            this.graphicsContext.strokeLine(-s * 0.58, -s * 0.07, -s * 0.41, -s * 0.07);
+            this.graphicsContext.strokeLine(-s * 0.58, -s * 0.01, -s * 0.41, -s * 0.01);
+            // Clip at top
+            this.graphicsContext.setFill(Color.GRAY);
+            this.graphicsContext.fillRect(-s * 0.52, -s * 0.23, s * 0.06, s * 0.06);
+            // Legs
+            this.graphicsContext.setStroke(color.darker());
+            this.graphicsContext.setLineWidth(3.0);
+            double legTop = -s * 0.45 + headR * 2 + s * 0.5;
+            this.graphicsContext.strokeLine(-s * 0.18, legTop, -s * 0.2, s * 0.5);
+            this.graphicsContext.strokeLine(s * 0.18, legTop, s * 0.2, s * 0.5);
+         }
 
-      // Eyes (larger, more menacing)
-      double eyeSize = baseSize / 5.0;
-      this.graphicsContext.setFill(Color.WHITE);
-      this.graphicsContext.fillOval(-baseSize/4 - eyeSize/2, -baseSize/6, eyeSize, eyeSize);
-      this.graphicsContext.fillOval(baseSize/4 - eyeSize/2, -baseSize/6, eyeSize, eyeSize);
-      this.graphicsContext.setFill(Color.RED);
-      this.graphicsContext.fillOval(-baseSize/4, -baseSize/6 + eyeSize/4, eyeSize/2, eyeSize/2);
-      this.graphicsContext.fillOval(baseSize/4 - eyeSize/4, -baseSize/6 + eyeSize/4, eyeSize/2, eyeSize/2);
+         case "Door Manager" -> {
+            // Dark navy uniform, cap, gold badge
+            double headR = s * 0.2;
+            this.graphicsContext.setFill(Color.rgb(255, 220, 180));
+            this.graphicsContext.fillOval(-headR, -s * 0.45, headR * 2, headR * 2);
+            // Cap
+            this.graphicsContext.setFill(Color.rgb(20, 30, 80));
+            this.graphicsContext.fillRect(-headR - 3, -s * 0.45, headR * 2 + 6, headR * 0.8);
+            this.graphicsContext.setFill(Color.rgb(10, 20, 60));
+            this.graphicsContext.fillRect(-headR - 5, -s * 0.45 + headR * 0.8 - 2, headR * 2 + 10, 4); // brim
+            // Navy uniform body
+            this.graphicsContext.setFill(Color.rgb(20, 30, 80));
+            this.graphicsContext.fillRect(-s * 0.28, -s * 0.45 + headR * 2, s * 0.56, s * 0.5);
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(2.0);
+            this.graphicsContext.strokeRect(-s * 0.28, -s * 0.45 + headR * 2, s * 0.56, s * 0.5);
+            // Gold epaulettes
+            this.graphicsContext.setFill(Color.GOLD);
+            this.graphicsContext.fillRect(-s * 0.3, -s * 0.45 + headR * 2, s * 0.1, s * 0.08);
+            this.graphicsContext.fillRect(s * 0.2, -s * 0.45 + headR * 2, s * 0.1, s * 0.08);
+            // Gold badge on chest
+            double badgeX = s * 0.05;
+            double badgeY = -s * 0.45 + headR * 2 + s * 0.12;
+            this.graphicsContext.setFill(Color.GOLD);
+            this.graphicsContext.fillPolygon(
+               new double[]{badgeX, badgeX + s * 0.07, badgeX + s * 0.12, badgeX + s * 0.07, badgeX, badgeX - s * 0.05},
+               new double[]{badgeY, badgeY + s * 0.02, badgeY + s * 0.08, badgeY + s * 0.14, badgeY + s * 0.12, badgeY + s * 0.08},
+               6);
+            // Arm extended (guarding door)
+            this.graphicsContext.setStroke(Color.rgb(20, 30, 80));
+            this.graphicsContext.setLineWidth(2.5);
+            this.graphicsContext.strokeLine(s * 0.28, -s * 0.2, s * 0.5, -s * 0.05);
+            // Legs
+            this.graphicsContext.setStroke(Color.rgb(20, 30, 80));
+            this.graphicsContext.setLineWidth(2.5);
+            double legTop2 = -s * 0.45 + headR * 2 + s * 0.5;
+            this.graphicsContext.strokeLine(-s * 0.13, legTop2, -s * 0.15, s * 0.5);
+            this.graphicsContext.strokeLine(s * 0.13, legTop2, s * 0.15, s * 0.5);
+         }
 
-      // Crown/indicator on top
-      this.graphicsContext.setFill(Color.GOLD);
-      double crownSize = baseSize / 3.0;
-      this.graphicsContext.fillPolygon(
-         new double[]{-crownSize, -crownSize/2, 0, crownSize/2, crownSize},
-         new double[]{-baseSize/2, -baseSize/2 - crownSize*0.7, -baseSize/2 - crownSize*0.3, -baseSize/2 - crownSize*0.7, -baseSize/2},
-         5);
-      this.graphicsContext.setStroke(Color.GOLD.brighter());
-      this.graphicsContext.setLineWidth(1.5);
-      this.graphicsContext.strokePolygon(
-         new double[]{-crownSize, -crownSize/2, 0, crownSize/2, crownSize},
-         new double[]{-baseSize/2, -baseSize/2 - crownSize*0.7, -baseSize/2 - crownSize*0.3, -baseSize/2 - crownSize*0.7, -baseSize/2},
-         5);
+         case "Return Fraud Kingpin" -> {
+            // Wide trench coat, fedora, surrounded by boxes
+            double headR = s * 0.2;
+            // Stacked return boxes around feet
+            this.graphicsContext.setFill(Color.rgb(180, 150, 100));
+            this.graphicsContext.fillRect(-s * 0.5, s * 0.2, s * 0.3, s * 0.25);
+            this.graphicsContext.fillRect(s * 0.2, s * 0.1, s * 0.28, s * 0.32);
+            this.graphicsContext.setStroke(Color.rgb(140, 110, 70));
+            this.graphicsContext.setLineWidth(1.0);
+            this.graphicsContext.strokeRect(-s * 0.5, s * 0.2, s * 0.3, s * 0.25);
+            this.graphicsContext.strokeRect(s * 0.2, s * 0.1, s * 0.28, s * 0.32);
+            // Big red tape X on boxes
+            this.graphicsContext.setStroke(Color.RED);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeLine(-s * 0.5, s * 0.2, -s * 0.2, s * 0.45);
+            this.graphicsContext.strokeLine(-s * 0.2, s * 0.2, -s * 0.5, s * 0.45);
+            // Fedora
+            this.graphicsContext.setFill(Color.rgb(60, 45, 30));
+            this.graphicsContext.fillOval(-headR - 6, -s * 0.55, headR * 2 + 12, headR); // brim
+            this.graphicsContext.fillRect(-headR - 2, -s * 0.65, headR * 2 + 4, headR * 1.5); // crown
+            this.graphicsContext.setStroke(Color.rgb(100, 75, 50));
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeOval(-headR - 6, -s * 0.55, headR * 2 + 12, headR);
+            this.graphicsContext.strokeRect(-headR - 2, -s * 0.65, headR * 2 + 4, headR * 1.5);
+            // Head
+            this.graphicsContext.setFill(Color.rgb(255, 220, 180));
+            this.graphicsContext.fillOval(-headR, -s * 0.5, headR * 2, headR * 2);
+            // Sneaky eyes
+            this.graphicsContext.setFill(Color.rgb(50, 30, 10));
+            this.graphicsContext.fillOval(-headR * 0.6, -s * 0.38, 3, 3);
+            this.graphicsContext.fillOval(headR * 0.1, -s * 0.38, 3, 3);
+            // Long trench coat (wide trapezoid body)
+            this.graphicsContext.setFill(Color.rgb(90, 70, 50));
+            double bodyTop = -s * 0.5 + headR * 2;
+            this.graphicsContext.fillPolygon(
+               new double[]{-s * 0.32, s * 0.32, s * 0.45, -s * 0.45},
+               new double[]{bodyTop, bodyTop, s * 0.35, s * 0.35}, 4);
+            this.graphicsContext.setStroke(Color.rgb(130, 100, 70));
+            this.graphicsContext.setLineWidth(2.0);
+            this.graphicsContext.strokePolygon(
+               new double[]{-s * 0.32, s * 0.32, s * 0.45, -s * 0.45},
+               new double[]{bodyTop, bodyTop, s * 0.35, s * 0.35}, 4);
+            // Coat lapels
+            this.graphicsContext.setFill(Color.rgb(110, 85, 60));
+            this.graphicsContext.fillPolygon(
+               new double[]{-s * 0.04, s * 0.04, 0},
+               new double[]{bodyTop, bodyTop, bodyTop + s * 0.2}, 3);
+         }
 
-      // Health-based rage indicator
-      if (healthPercent < 0.5) {
-         double rageAlpha = (0.5 - healthPercent) * 2.0;
-         double ragePulse = 0.5 + 0.5 * Math.sin(this.cachedFrameTime * 0.01);
-         this.graphicsContext.setGlobalAlpha(rageAlpha * ragePulse * 0.3);
-         this.graphicsContext.setFill(Color.RED);
-         double rageSize = baseSize * 1.5;
-         this.graphicsContext.fillOval(-rageSize/2, -rageSize/2, rageSize, rageSize);
-         this.graphicsContext.setGlobalAlpha(1.0);
+         case "Board of Directors" -> {
+            // Three suits in formation
+            double[] offsets = {-s * 0.38, 0, s * 0.38};
+            Color[] suitColors = {Color.rgb(40, 40, 55), Color.rgb(30, 30, 50), Color.rgb(50, 40, 55)};
+            for (int i = 0; i < 3; i++) {
+               double ox = offsets[i];
+               double oy = (i == 1) ? -s * 0.1 : 0; // center one slightly higher
+               double sm = s * 0.32; // mini size
+               double mhr = sm * 0.28;
+               // Head
+               this.graphicsContext.setFill(Color.rgb(255, 220, 180));
+               this.graphicsContext.fillOval(ox - mhr, oy - sm * 0.55, mhr * 2, mhr * 2);
+               // Body
+               this.graphicsContext.setFill(suitColors[i]);
+               this.graphicsContext.fillRect(ox - sm * 0.3, oy - sm * 0.55 + mhr * 2, sm * 0.6, sm * 0.5);
+               // Red tie on center suit
+               if (i == 1) {
+                  this.graphicsContext.setFill(Color.RED);
+                  this.graphicsContext.fillPolygon(
+                     new double[]{ox - sm * 0.04, ox + sm * 0.04, ox + sm * 0.02, ox - sm * 0.02},
+                     new double[]{oy - sm * 0.55 + mhr * 2, oy - sm * 0.55 + mhr * 2, oy - sm * 0.55 + mhr * 2 + sm * 0.28, oy - sm * 0.55 + mhr * 2 + sm * 0.28},
+                     4);
+               }
+               this.graphicsContext.setStroke(color);
+               this.graphicsContext.setLineWidth(1.5);
+               this.graphicsContext.strokeOval(ox - mhr, oy - sm * 0.55, mhr * 2, mhr * 2);
+               this.graphicsContext.strokeRect(ox - sm * 0.3, oy - sm * 0.55 + mhr * 2, sm * 0.6, sm * 0.5);
+            }
+            // Gold crown above center figure
+            double cw = s * 0.28;
+            this.graphicsContext.setFill(Color.GOLD);
+            this.graphicsContext.fillPolygon(
+               new double[]{-cw, -cw/2, 0, cw/2, cw},
+               new double[]{-s * 0.65, -s * 0.78, -s * 0.7, -s * 0.78, -s * 0.65}, 5);
+         }
+
+         default -> {
+            // Fallback generic boss blob
+            this.graphicsContext.setFill(color.darker().darker());
+            this.graphicsContext.fillOval(-s/2, -s/2.2, s, s * 1.1);
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(3.0);
+            this.graphicsContext.strokeOval(-s/2, -s/2.2, s, s * 1.1);
+         }
       }
 
       this.graphicsContext.restore();
@@ -1033,7 +1224,7 @@ public class GameView extends Canvas {
       this.graphicsContext.save();
       this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
       this.graphicsContext.setFill(color.brighter());
-      this.graphicsContext.fillOval(centerX - baseSize/4, centerY - baseSize/3, baseSize/3, baseSize/4);
+      this.graphicsContext.fillOval(centerX - s/4, centerY - s/3, s/3, s/4);
       this.graphicsContext.restore();
    }
 

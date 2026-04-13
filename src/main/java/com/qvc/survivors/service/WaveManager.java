@@ -298,14 +298,7 @@ public class WaveManager {
 
       EnemyType type = selectEnemyType();
 
-      Enemy enemy;
-      if (type == EnemyType.REGULAR_CUSTOMER) {
-         enemy = this.entityPoolManager.obtainRegularCustomer(spawnX, spawnY);
-      } else if (type == EnemyType.VIP_CUSTOMER) {
-         enemy = this.entityPoolManager.obtainVIPCustomer(spawnX, spawnY);
-      } else {
-         enemy = this.entityPoolManager.obtainGenericEnemy(spawnX, spawnY, type);
-      }
+      Enemy enemy = this.entityPoolManager.obtainGenericEnemy(spawnX, spawnY, type);
 
       if (this.zoneMultiplier > 1.0) {
          double currentMax = enemy.getHealthComponent().getMaxHealth();

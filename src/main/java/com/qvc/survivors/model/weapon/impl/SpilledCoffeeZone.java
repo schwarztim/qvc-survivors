@@ -31,7 +31,7 @@ public class SpilledCoffeeZone extends Weapon {
             double offsetX = (Math.random() - 0.5) * 10.0;
             double offsetY = (Math.random() - 0.5) * 10.0;
             ShockwaveEffect zone = new ShockwaveEffect(playerX + offsetX, playerY + offsetY,
-                    zoneRadius * 15.0, damage);
+                    zoneRadius * 15.0, damage, javafx.scene.paint.Color.rgb(101, 67, 33));
             activeZones.add(zone);
         }
         resetCooldown();

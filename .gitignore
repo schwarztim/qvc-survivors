@@ -1,3 +1,10 @@
 target/
 *.class
 .DS_Store
+dist/
+*.iconset/
+*.icns
+*.jar
+dependency-reduced-pom.xml
+.temp/
+QVCSurvivors/

@@ -81,7 +81,7 @@ public class HUDView {
 
    private void renderLeftHUD(Player player) {
       int y = 20;
-      String healthText = String.format("Stamina: %.0f/%.0f", player.getHealthComponent().getCurrentHealth(), player.getHealthComponent().getMaxHealth());
+      String healthText = String.format("Energy: %.0f/%.0f", player.getHealthComponent().getCurrentHealth(), player.getHealthComponent().getMaxHealth());
       double healthPercent = player.getHealthComponent().getHealthPercentage();
       Color healthColor = healthPercent > 0.5 ? Color.LIGHTGREEN : (healthPercent > 0.25 ? Color.YELLOW : Color.RED);
       this.gameView.drawText(healthText, 10.0, y, healthColor, 14);

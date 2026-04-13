@@ -2,6 +2,7 @@ package com.qvc.survivors.model.entity;
 
 import java.util.HashSet;
 import java.util.Set;
+import javafx.scene.paint.Color;
 
 public class ShockwaveEffect extends Entity {
     private final double maxRadius;
@@ -10,13 +11,19 @@ public class ShockwaveEffect extends Entity {
     private static final double MAX_LIFETIME = 0.4;
     private double currentRadius;
     private final Set<Enemy> hitEnemies = new HashSet<>();
+    private final Color color;
 
     public ShockwaveEffect(double x, double y, double maxRadius, double damage) {
+        this(x, y, maxRadius, damage, null);
+    }
+
+    public ShockwaveEffect(double x, double y, double maxRadius, double damage, Color color) {
         super(x, y, maxRadius * 2, maxRadius * 2);
         this.maxRadius = maxRadius;
         this.damage = damage;
         this.lifetime = MAX_LIFETIME;
         this.currentRadius = 0.0;
+        this.color = color;
     }
 
     @Override
@@ -50,4 +57,5 @@ public class ShockwaveEffect extends Entity {
     public double getMaxRadius() { return maxRadius; }
     public double getCurrentRadius() { return currentRadius; }
     public double getLifetime() { return lifetime; }
+    public Color getColor() { return color; }
 }

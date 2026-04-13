@@ -36,11 +36,12 @@ public class LevelUpView {
       this.gameView.drawText("LEVEL UP!", cw / 2.0 - 70, titleY, titleColor, 32);
       this.gameView.drawText("Choose Your Upgrade", cw / 2.0 - 100, titleY + 40, TEXT_COLOR, 16);
 
-      // Cards layout
+      // Cards layout — scale with window size
       int count = Math.min(upgrades.size(), 4);
-      double cardW = 180;
-      double cardH = 220;
       double gap = 20;
+      double maxCardW = (cw - gap * (count + 1)) / count;
+      double cardW = Math.min(260, Math.max(160, maxCardW));
+      double cardH = Math.min(260, ch * 0.42);
       double totalW = count * cardW + (count - 1) * gap;
       double startX = (cw - totalW) / 2.0;
       double cardY = ch * 0.28;
@@ -73,19 +74,20 @@ public class LevelUpView {
          Color numColor = selected ? Color.WHITE : DIM_TEXT;
          this.gameView.drawText("[" + (i + 1) + "]", cardX + cardW - 35, cardY + 27, numColor, 12);
 
-         // Weapon/item name
+         // Weapon/item name — scale truncation to card width
          Color nameColor = selected ? Color.WHITE : TEXT_COLOR;
          String name = upgrade.getName();
-         if (name.length() > 20) name = name.substring(0, 18) + "..";
+         int maxNameChars = (int) (cardW / 8.0);
+         if (name.length() > maxNameChars) name = name.substring(0, maxNameChars - 2) + "..";
          this.gameView.drawText(name, cardX + 12, cardY + 60, nameColor, 14);
 
-         // Description (word-wrap manually, max 3 lines)
+         // Description (word-wrap manually, scale to card width)
          String desc = upgrade.getDescription();
-         int charsPerLine = 22;
+         int charsPerLine = (int) (cardW / 7.5);
+         int maxLines = (int) ((cardH - 100) / 16);
          double descY = cardY + 85;
-         for (int line = 0; line < 3 && !desc.isEmpty(); line++) {
+         for (int line = 0; line < maxLines && !desc.isEmpty(); line++) {
             int end = Math.min(desc.length(), charsPerLine);
-            // Try to break at space
             if (end < desc.length()) {
                int space = desc.lastIndexOf(' ', end);
                if (space > end / 2) end = space;

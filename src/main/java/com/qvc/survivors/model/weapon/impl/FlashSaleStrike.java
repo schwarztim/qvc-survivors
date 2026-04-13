@@ -37,7 +37,7 @@ public class FlashSaleStrike extends Weapon {
         for (int i = 0; i < strikeCount && !activeEnemies.isEmpty(); i++) {
             Enemy target = activeEnemies.get((int)(Math.random() * activeEnemies.size()));
             ShockwaveEffect strike = new ShockwaveEffect(target.getX(), target.getY(),
-                    aoeRadius * 15.0, damage);
+                    aoeRadius * 15.0, damage, javafx.scene.paint.Color.rgb(255, 240, 50));
             activeStrikes.add(strike);
         }
         resetCooldown();

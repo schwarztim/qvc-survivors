@@ -63,6 +63,7 @@ public class GamepadHandler {
 
     private void scanForGamepad() {
         if (hidServices == null) return;
+        try { hidServices.scan(); } catch (Exception ignored) {}
         for (HidDevice dev : hidServices.getAttachedHidDevices()) {
             int vid = dev.getVendorId();
             int pid = dev.getProductId();

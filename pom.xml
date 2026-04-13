@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>QVCSurvivors</artifactId>
-    <version>2.3.0</version>
+    <version>3.0.0</version>
 
     <properties>
         <javafx.version>21.0.5</javafx.version>
