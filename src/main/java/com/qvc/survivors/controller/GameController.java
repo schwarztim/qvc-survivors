@@ -111,6 +111,10 @@ public class GameController {
    private int selectedSettingsRow;
    private GameState preSettingsState;
    private int selectedLevelUpOption;
+   private int rerollsRemaining = 1;
+   private int skipsRemaining = 1;
+   private int banishesRemaining = 1;
+   private final java.util.Set<String> banishedUpgradeIds = new java.util.HashSet<>();
    private TileMap tileMap;
    private List<MapCollectible> mapCollectibles;
    private ZoneType currentZone;
@@ -171,6 +175,10 @@ public class GameController {
       this.treasureChests = new ArrayList<>();
       this.gameState = GameState.PRELOADER;
       this.currentUpgradeOptions = new ArrayList<>();
+      this.rerollsRemaining = (int) this.metaProgressionManager.getMetaProgression().getUpgradeValue(MetaUpgradeType.REROLL_CHARGES);
+      this.skipsRemaining = (int) this.metaProgressionManager.getMetaProgression().getUpgradeValue(MetaUpgradeType.SKIP_CHARGES);
+      this.banishesRemaining = (int) this.metaProgressionManager.getMetaProgression().getUpgradeValue(MetaUpgradeType.BANISH_CHARGES);
+      this.banishedUpgradeIds.clear();
       this.isTransitioning = false;
       this.transitionProgress = 0.0;
       this.moneyEarnedThisRun = 0;
@@ -679,7 +687,8 @@ public class GameController {
             continue;
          }
 
-         for (Enemy enemy : this.enemies) {
+         for (com.qvc.survivors.model.entity.Entity nearEntity : this.collisionManager.queryEnemiesNear(projectile)) {
+            if (!(nearEntity instanceof Enemy enemy)) continue;
             if (enemy.isActive() && this.collisionManager.checkCollision(projectile, enemy)) {
                double damage = projectile.getDamageComponent().getDamage();
                boolean isCritical = Math.random() < critChance;
@@ -1060,6 +1069,38 @@ public class GameController {
                MapCollectibleType.FLOOR_MODEL, MapCollectibleType.EMPLOYEE_DISCOUNT
             };
             applyMapCollectibleEffect(effects[(int)(Math.random() * effects.length)]);
+            break;
+         case EMERGENCY_BROADCAST:
+            // Kill all enemies on screen (Rosary equivalent)
+            for (Enemy enemy : this.enemies) {
+               if (enemy.isActive()) {
+                  enemy.takeDamage(99999);
+                  this.gameView.getParticleSystem().createExplosion(enemy.getX(), enemy.getY(), Color.WHITE, 10);
+                  handleEnemyDeath(enemy);
+               }
+            }
+            break;
+         case COMMERCIAL_BREAK:
+            // Freeze all enemies for 10 seconds (Orologion equivalent)
+            for (Enemy enemy : this.enemies) {
+               if (enemy.isActive()) {
+                  enemy.getMovementComponent().setSpeed(0.0);
+               }
+            }
+            break;
+         case WAREHOUSE_SWEEP:
+            // Collect all XP gems on screen (Vacuum equivalent)
+            for (Collectible gem : this.collectibles) {
+               if (gem.isActive()) {
+                  int value = gem.getValue();
+                  if (gem.isHealthPack()) {
+                     this.player.getHealthComponent().heal(value);
+                  } else {
+                     this.player.addExperience(value);
+                  }
+                  gem.setActive(false);
+               }
+            }
             break;
       }
    }
@@ -1482,7 +1523,7 @@ public class GameController {
          this.characterSelectView.render(this.selectedCharacter);
          this.camera.setEnabled(true);
       } else if (this.gameState == GameState.LEVEL_UP) {
-         this.levelUpView.render(this.currentUpgradeOptions);
+         this.levelUpView.render(this.currentUpgradeOptions, this.selectedLevelUpOption, this.rerollsRemaining, this.skipsRemaining, this.banishesRemaining);
       } else if (this.gameState == GameState.GAME_OVER) {
          this.deathRecapView.render(this.player, this.waveManager.getCurrentWave(),
             this.currentZone, this.player.getInventory());

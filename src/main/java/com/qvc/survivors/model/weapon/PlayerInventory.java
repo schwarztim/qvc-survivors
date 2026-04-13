@@ -25,6 +25,16 @@ public class PlayerInventory {
         return true;
     }
 
+    public boolean replaceWeapon(String oldId, Weapon newWeapon) {
+        for (int i = 0; i < weapons.size(); i++) {
+            if (weapons.get(i).getId().equals(oldId)) {
+                weapons.set(i, newWeapon);
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean hasWeapon(String id) {
         return weapons.stream().anyMatch(w -> w.getId().equals(id));
     }
