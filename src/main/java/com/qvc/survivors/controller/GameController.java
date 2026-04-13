@@ -1454,17 +1454,21 @@ public class GameController {
       for (Collectible collectible : this.collectibles) {
          if (collectible.isActive() && this.camera.isInView(collectible.getX(), collectible.getY(), 5)) {
             boolean isHealthPack = collectible.isHealthPack();
-            boolean isPremium = false;
             Color itemColor;
+            int gemTier;
             if (isHealthPack) {
                itemColor = Color.LIGHTGREEN;
+               gemTier = -1;
             } else {
-               isPremium = collectible.getValue() >= 5;
-               itemColor = isPremium ? Color.GOLD : Color.YELLOW;
+               gemTier = collectible.getTier();
+               // Tier 0 = small blue, 1 = medium green, 2 = large red
+               itemColor = gemTier == 0 ? Color.rgb(100, 150, 255) :
+                           gemTier == 1 ? Color.rgb(80, 220, 100) :
+                                          Color.rgb(255, 80, 80);
             }
 
             double pulseIntensity = 0.5 + 0.5 * Math.sin(this.currentFrameTime * 0.005);
-            this.gameView.drawCollectible(collectible.getX(), collectible.getY(), itemColor, 1.0 + pulseIntensity * 0.5, isHealthPack, isPremium);
+            this.gameView.drawCollectible(collectible.getX(), collectible.getY(), itemColor, 1.0 + pulseIntensity * 0.5, isHealthPack, gemTier);
          }
       }
 

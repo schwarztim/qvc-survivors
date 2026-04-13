@@ -382,6 +382,15 @@ public class GameView extends Canvas {
    }
 
    public void drawCollectible(double x, double y, Color color, double glowIntensity, boolean isHealthPack, boolean isPremium) {
+      // Legacy overload: isPremium maps to tier 2, otherwise tier 0
+      drawCollectible(x, y, color, glowIntensity, isHealthPack, isPremium ? 2 : -1);
+   }
+
+   /**
+    * Draw a collectible pickup.
+    * @param gemTier -1 = money/coin, 0 = small blue gem, 1 = medium green gem, 2 = large red gem
+    */
+   public void drawCollectible(double x, double y, Color color, double glowIntensity, boolean isHealthPack, int gemTier) {
       double pixelX = camera.worldToScreenX(x);
       double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + 7.5;
@@ -394,40 +403,43 @@ public class GameView extends Canvas {
       this.graphicsContext.translate(centerX, centerY);
       this.graphicsContext.scale(scale, scale);
       if (isHealthPack) {
-         double crossSize = size / 2.0;
-         double crossWidth = size / 5.0;
+         // Green cross with white outline
+         double crossSize = size / 1.8;
+         double crossWidth = size / 4.0;
          this.graphicsContext.setFill(Color.WHITE);
+         this.graphicsContext.fillRect(-crossSize / 2.0 - 1, -crossWidth / 2.0 - 1, crossSize + 2, crossWidth + 2);
+         this.graphicsContext.fillRect(-crossWidth / 2.0 - 1, -crossSize / 2.0 - 1, crossWidth + 2, crossSize + 2);
+         this.graphicsContext.setFill(Color.LIMEGREEN);
          this.graphicsContext.fillRect(-crossSize / 2.0, -crossWidth / 2.0, crossSize, crossWidth);
          this.graphicsContext.fillRect(-crossWidth / 2.0, -crossSize / 2.0, crossWidth, crossSize);
-         this.graphicsContext.setFill(color);
-         this.graphicsContext.fillRect(-crossSize / 2.0 + 1.0, -crossWidth / 2.0 + 1.0, crossSize - 2.0, crossWidth - 2.0);
-         this.graphicsContext.fillRect(-crossWidth / 2.0 + 1.0, -crossSize / 2.0 + 1.0, crossWidth - 2.0, crossSize - 2.0);
+      } else if (gemTier >= 0) {
+         // Diamond-shaped gem, size varies by tier
+         double gemScale = gemTier == 0 ? 0.7 : gemTier == 1 ? 0.9 : 1.1;
+         double half = size * gemScale / 2.0;
+         this.graphicsContext.setFill(color.darker());
+         this.graphicsContext.fillPolygon(
+            new double[]{0, half, 0, -half},
+            new double[]{-half * 1.3, 0, half * 1.3, 0}, 4);
          this.graphicsContext.setStroke(color.brighter());
          this.graphicsContext.setLineWidth(1.5);
-         this.graphicsContext.strokeRect(-crossSize / 2.0, -crossWidth / 2.0, crossSize, crossWidth);
-         this.graphicsContext.strokeRect(-crossWidth / 2.0, -crossSize / 2.0, crossWidth, crossSize);
-      } else if (isPremium) {
-         double starPoints = 8.0;
-         double outerRadius = size / 2.0;
-         double innerRadius = size / 4.0;
-         double[] xPoints = new double[(int)starPoints * 2];
-         double[] yPoints = new double[(int)starPoints * 2];
-
-         for (int i = 0; i < starPoints * 2.0; i++) {
-            double angle = Math.PI * i / starPoints;
-            double radius = i % 2 == 0 ? outerRadius : innerRadius;
-            xPoints[i] = Math.cos(angle) * radius;
-            yPoints[i] = Math.sin(angle) * radius;
-         }
-
-         this.graphicsContext.setFill(color.darker());
-         this.graphicsContext.fillPolygon(xPoints, yPoints, (int)starPoints * 2);
-         this.graphicsContext.setStroke(color);
-         this.graphicsContext.setLineWidth(2.0);
-         this.graphicsContext.strokePolygon(xPoints, yPoints, (int)starPoints * 2);
+         this.graphicsContext.strokePolygon(
+            new double[]{0, half, 0, -half},
+            new double[]{-half * 1.3, 0, half * 1.3, 0}, 4);
+         // Inner highlight
          this.graphicsContext.setFill(color.brighter());
-         this.graphicsContext.fillOval(-size / 6.0, -size / 6.0, size / 3.0, size / 3.0);
+         double dotR = half * 0.3;
+         this.graphicsContext.fillOval(-dotR, -dotR, dotR * 2, dotR * 2);
+         // Large red gem gets extra glow ring
+         if (gemTier == 2) {
+            this.graphicsContext.setGlobalAlpha(0.3 + 0.2 * Math.sin(pulse * 3.0));
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(2.0);
+            double glowR = half * 1.5;
+            this.graphicsContext.strokeOval(-glowR, -glowR, glowR * 2, glowR * 2);
+            this.graphicsContext.setGlobalAlpha(1.0);
+         }
       } else {
+         // Money/coin: gold circle with "$"
          this.graphicsContext.setFill(color.darker());
          this.graphicsContext.fillOval(-size / 2.0, -size / 2.0, size, size);
          this.graphicsContext.setStroke(color);
