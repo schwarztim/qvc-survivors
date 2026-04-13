@@ -29,6 +29,10 @@ public class HealthComponent {
       this.currentHealth += amount;
    }
 
+   public void setMaxHealth(double maxHealth) {
+      this.maxHealth = maxHealth;
+   }
+
    public boolean isAlive() {
       return this.currentHealth > 0.0;
    }

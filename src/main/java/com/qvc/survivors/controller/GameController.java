@@ -19,6 +19,13 @@ import com.qvc.survivors.service.MetaProgressionManager;
 import com.qvc.survivors.service.SoundEffectGenerator;
 import com.qvc.survivors.service.UpgradeManager;
 import com.qvc.survivors.service.WaveManager;
+import com.qvc.survivors.world.MapCollectible;
+import com.qvc.survivors.world.MapCollectibleType;
+import com.qvc.survivors.world.TileMap;
+import com.qvc.survivors.world.TileType;
+import com.qvc.survivors.world.WorldGenerator;
+import com.qvc.survivors.world.Zone;
+import com.qvc.survivors.world.ZoneType;
 import com.qvc.survivors.view.GameView;
 import com.qvc.survivors.view.HUDView;
 import com.qvc.survivors.view.LevelUpView;
@@ -79,6 +86,11 @@ public class GameController {
    private boolean isFirstGame;
    private int selectedMetaUpgrade;
    private int moneyEarnedThisRun;
+   private TileMap tileMap;
+   private List<MapCollectible> mapCollectibles;
+   private ZoneType currentZone;
+   private double zoneNameTimer;
+   private String zoneNameDisplay;
 
    public GameController(Stage stage, SoundEffectGenerator soundGenerator) {
       this.stage = stage;
@@ -118,6 +130,13 @@ public class GameController {
       this.transitionProgress = 0.0;
       this.moneyEarnedThisRun = 0;
       this.targetState = null;
+      WorldGenerator gen = new WorldGenerator();
+      this.tileMap = gen.generate(GRID_WIDTH, GRID_HEIGHT);
+      this.mapCollectibles = gen.generateCollectibles(this.tileMap);
+      this.gameView.setTileMap(this.tileMap);
+      this.currentZone = null;
+      this.zoneNameTimer = 0.0;
+      this.zoneNameDisplay = null;
       this.soundGenerator.startIntroMusic();
    }
 
@@ -230,6 +249,28 @@ public class GameController {
       this.camera.follow(this.player.getX(), this.player.getY(), 5.0, deltaTime);
       this.camera.update(deltaTime);
       this.gameView.updateParticles(deltaTime);
+
+      // Zone tracking
+      Zone zone = this.tileMap.getZoneAt(this.player.getX(), this.player.getY());
+      ZoneType newZone = zone != null ? zone.getType() : null;
+      if (newZone != this.currentZone) {
+         this.currentZone = newZone;
+         if (newZone != null) {
+            this.zoneNameDisplay = newZone.getDisplayName();
+            this.zoneNameTimer = 3.0;
+         }
+      }
+      this.waveManager.setCurrentZone(this.currentZone);
+      if (this.zoneNameTimer > 0.0) {
+         this.zoneNameTimer -= deltaTime;
+      }
+
+      // Update map collectibles
+      for (MapCollectible mc : this.mapCollectibles) {
+         mc.update(deltaTime);
+      }
+      this.checkMapCollectiblePickup();
+
       this.waveManager.setCameraPosition(
          this.camera.getX(), this.camera.getY(),
          this.camera.getViewportWidth(), this.camera.getViewportHeight()
@@ -316,8 +357,20 @@ public class GameController {
    }
 
    private void constrainPlayerToBounds() {
-      this.player.setX(Math.max(0.0, Math.min(399.0, this.player.getX())));
-      this.player.setY(Math.max(0.0, Math.min(299.0, this.player.getY())));
+      double px = Math.max(0.0, Math.min(399.0, this.player.getX()));
+      double py = Math.max(0.0, Math.min(299.0, this.player.getY()));
+      // Wall collision: prevent movement into WALL tiles
+      if (this.tileMap != null) {
+         int tileX = (int) px;
+         int tileY = (int) py;
+         if (this.tileMap.getTile(tileX, tileY) == TileType.WALL) {
+            // Revert to previous position (snap back)
+            px = Math.max(0.0, Math.min(399.0, this.player.getX() - this.player.getMovementComponent().getVelocityX() * 0.016));
+            py = Math.max(0.0, Math.min(299.0, this.player.getY() - this.player.getMovementComponent().getVelocityY() * 0.016));
+         }
+      }
+      this.player.setX(px);
+      this.player.setY(py);
    }
 
    private boolean fireProjectiles() {
@@ -506,6 +559,66 @@ public class GameController {
       this.collectibles.removeIf(c -> !c.isActive());
    }
 
+   private void checkMapCollectiblePickup() {
+      double pickupRange = this.player.getStats().getStat(StatModifier.PICKUP_RANGE) + 1.0;
+      for (MapCollectible mc : this.mapCollectibles) {
+         if (!mc.isAvailable()) continue;
+         double dx = this.player.getX() - mc.getX();
+         double dy = this.player.getY() - mc.getY();
+         double dist = Math.sqrt(dx * dx + dy * dy);
+         if (dist <= pickupRange) {
+            mc.collect();
+            this.soundGenerator.playCollectSound();
+            this.gameView.getParticleSystem().createCollectionEffect(mc.getX(), mc.getY(), mc.getType().getColor());
+            applyMapCollectibleEffect(mc.getType());
+         }
+      }
+   }
+
+   private void applyMapCollectibleEffect(MapCollectibleType type) {
+      switch (type) {
+         case OVERSTOCK_CRATE:
+            for (int i = 0; i < 20; i++) {
+               double angle = Math.random() * Math.PI * 2;
+               double dist = 2.0 + Math.random() * 4.0;
+               double cx = this.player.getX() + Math.cos(angle) * dist;
+               double cy = this.player.getY() + Math.sin(angle) * dist;
+               this.collectibles.add(this.entityPoolManager.obtainCollectible(cx, cy, 1, false));
+            }
+            break;
+         case COFFEE_MUG:
+            this.player.activateCoffeeBreak(10.0);
+            break;
+         case GIFT_CARD:
+            this.player.setMoney(this.player.getMoney() + 25);
+            this.player.addExperience(25);
+            this.moneyEarnedThisRun += 25;
+            break;
+         case RECALL_NOTICE:
+            for (Enemy enemy : this.enemies) {
+               if (enemy.isActive()) {
+                  enemy.takeDamage(10);
+                  this.gameView.getParticleSystem().createImpact(enemy.getX(), enemy.getY(), Color.RED);
+               }
+            }
+            break;
+         case FLOOR_MODEL:
+            this.player.addExperience(this.player.getExperienceThreshold());
+            break;
+         case EMPLOYEE_DISCOUNT:
+            this.player.activateEmployeeDiscount();
+            break;
+         case MYSTERY_SAMPLE:
+            MapCollectibleType[] effects = {
+               MapCollectibleType.OVERSTOCK_CRATE, MapCollectibleType.COFFEE_MUG,
+               MapCollectibleType.GIFT_CARD, MapCollectibleType.RECALL_NOTICE,
+               MapCollectibleType.FLOOR_MODEL, MapCollectibleType.EMPLOYEE_DISCOUNT
+            };
+            applyMapCollectibleEffect(effects[(int)(Math.random() * effects.length)]);
+            break;
+      }
+   }
+
    private void pushEnemiesAway() {
       double knockbackDistance = 15.0;
 
@@ -538,6 +651,14 @@ public class GameController {
 
          if (choice >= 0 && choice < this.currentUpgradeOptions.size()) {
             Upgrade selectedUpgrade = this.currentUpgradeOptions.get(choice);
+            // Employee discount: double stat values for this level-up
+            if (this.player.isEmployeeDiscountActive()) {
+               for (StatModifier mod : selectedUpgrade.getStatModifiers().keySet()) {
+                  double val = selectedUpgrade.getStatModifiers().get(mod);
+                  selectedUpgrade.getStatModifiers().put(mod, val * 2.0);
+               }
+               this.player.consumeEmployeeDiscount();
+            }
             this.player.getStats().applyUpgrade(selectedUpgrade);
             if (selectedUpgrade.getStatModifiers().containsKey(StatModifier.MAX_HEALTH)) {
                double healthIncrease = selectedUpgrade.getStatModifiers().get(StatModifier.MAX_HEALTH);
@@ -692,6 +813,14 @@ public class GameController {
    }
 
    private void renderEntities() {
+      // Render map collectibles
+      for (MapCollectible mc : this.mapCollectibles) {
+         if (mc.isAvailable() && this.camera.isInView(mc.getX(), mc.getY(), 5)) {
+            double pulse = this.currentFrameTime * 0.003;
+            this.gameView.drawMapCollectible(mc.getX(), mc.getY(), mc.getType(), pulse);
+         }
+      }
+
       for (Collectible collectible : this.collectibles) {
          if (collectible.isActive() && this.camera.isInView(collectible.getX(), collectible.getY(), 5)) {
             boolean isHealthPack = collectible.isHealthPack();
@@ -765,6 +894,23 @@ public class GameController {
       }
 
       this.gameView.drawPlayer(this.player.getX(), this.player.getY(), playerColor, playerGlow);
+
+      // Zone name banner
+      if (this.zoneNameTimer > 0.0 && this.zoneNameDisplay != null) {
+         double alpha = Math.min(1.0, this.zoneNameTimer);
+         Color zoneColor = Color.rgb(220, 230, 255, alpha * 0.9);
+         double centerX = this.gameView.getWidth() / 2.0;
+         this.gameView.drawText(this.zoneNameDisplay, centerX - this.zoneNameDisplay.length() * 6, 60.0, zoneColor, 24);
+      }
+
+      // Coffee break indicator
+      if (this.player.isCoffeeBreakActive()) {
+         double remaining = this.player.getCoffeeBreakTimer();
+         this.gameView.drawText(String.format("COFFEE BREAK! %.0fs", remaining), 10.0, this.gameView.getHeight() - 30.0, Color.rgb(139, 90, 43, 0.8), 14);
+      }
+      if (this.player.isEmployeeDiscountActive()) {
+         this.gameView.drawText("EMPLOYEE DISCOUNT ACTIVE", 10.0, this.gameView.getHeight() - 50.0, Color.rgb(50, 200, 100, 0.8), 14);
+      }
    }
 
    private void renderGameOver() {

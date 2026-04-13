@@ -1,6 +1,9 @@
 package com.qvc.survivors.view;
 
 import com.qvc.survivors.engine.Camera;
+import com.qvc.survivors.world.MapCollectibleType;
+import com.qvc.survivors.world.TileMap;
+import com.qvc.survivors.world.TileType;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.effect.BlendMode;
@@ -25,6 +28,7 @@ public class GameView extends Canvas {
    private static final double TILE_SIZE_HALF = 7.5;
    private long cachedFrameTime;
    private Camera camera;
+   private TileMap tileMap;
 
    public GameView(int gridWidth, int gridHeight, double viewportWidth, double viewportHeight) {
       super(viewportWidth, viewportHeight);
@@ -41,6 +45,10 @@ public class GameView extends Canvas {
 
    public void setCamera(Camera camera) {
       this.camera = camera;
+   }
+
+   public void setTileMap(TileMap tileMap) {
+      this.tileMap = tileMap;
    }
 
    public void resizeCanvas(double width, double height) {
@@ -99,7 +107,11 @@ public class GameView extends Canvas {
       this.graphicsContext.setFill(BACKGROUND_COLOR);
       this.graphicsContext.fillRect(0.0, 0.0, this.getWidth(), this.getHeight());
       this.drawBackgroundEffects();
-      this.drawGrid();
+      if (this.tileMap != null) {
+         this.drawTileMap();
+      } else {
+         this.drawGrid();
+      }
       this.drawScanlines();
       this.animationTime += 0.016;
    }
@@ -157,6 +169,79 @@ public class GameView extends Canvas {
       for (int i = 0; i < this.getHeight(); i += 4) {
          this.graphicsContext.strokeLine(0.0, i + offset, this.getWidth(), i + offset);
       }
+   }
+
+   private void drawTileMap() {
+      int firstCol = Math.max(0, (int) Math.floor(camera.screenToWorldX(0)));
+      int lastCol = Math.min(this.tileMap.getWidth() - 1, (int) Math.ceil(camera.screenToWorldX(this.getWidth())));
+      int firstRow = Math.max(0, (int) Math.floor(camera.screenToWorldY(0)));
+      int lastRow = Math.min(this.tileMap.getHeight() - 1, (int) Math.ceil(camera.screenToWorldY(this.getHeight())));
+
+      for (int tx = firstCol; tx <= lastCol; tx++) {
+         for (int ty = firstRow; ty <= lastRow; ty++) {
+            TileType tile = this.tileMap.getTile(tx, ty);
+            double screenX = camera.worldToScreenX(tx);
+            double screenY = camera.worldToScreenY(ty);
+
+            this.graphicsContext.setFill(tile.getBaseColor());
+            this.graphicsContext.fillRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
+
+            if (tile == TileType.WALL) {
+               this.graphicsContext.setStroke(tile.getGridColor());
+               this.graphicsContext.setLineWidth(1.5);
+               this.graphicsContext.strokeRect(screenX + 0.5, screenY + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
+            } else {
+               this.graphicsContext.setStroke(tile.getGridColor());
+               this.graphicsContext.setLineWidth(0.5);
+               this.graphicsContext.strokeRect(screenX, screenY, TILE_SIZE, TILE_SIZE);
+            }
+         }
+      }
+   }
+
+   public void drawMapCollectible(double x, double y, MapCollectibleType type, double pulse) {
+      double pixelX = camera.worldToScreenX(x);
+      double pixelY = camera.worldToScreenY(y);
+      double centerX = pixelX + TILE_SIZE_HALF;
+      double centerY = pixelY + TILE_SIZE_HALF;
+      Color color = type.getColor();
+
+      // Glow
+      this.graphicsContext.save();
+      this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
+      double glowRadius = 25.0 * (0.8 + pulse * 0.4);
+      RadialGradient gradient = new RadialGradient(0.0, 0.0, centerX, centerY, glowRadius, false,
+         CycleMethod.NO_CYCLE,
+         new Stop[]{
+            new Stop(0.0, Color.rgb((int)(color.getRed() * 255), (int)(color.getGreen() * 255), (int)(color.getBlue() * 255), 0.35)),
+            new Stop(1.0, Color.TRANSPARENT)
+         });
+      this.graphicsContext.setFill(gradient);
+      this.graphicsContext.fillOval(centerX - glowRadius, centerY - glowRadius, glowRadius * 2.0, glowRadius * 2.0);
+      this.graphicsContext.restore();
+
+      double size = 10.0;
+      double scale = 1.0 + Math.sin(pulse * 3.0) * 0.15;
+      this.graphicsContext.save();
+      this.graphicsContext.translate(centerX, centerY);
+      this.graphicsContext.scale(scale, scale);
+
+      // Diamond shape
+      double half = size / 2.0;
+      this.graphicsContext.setFill(color.darker());
+      this.graphicsContext.fillPolygon(
+         new double[]{0, half, 0, -half},
+         new double[]{-half, 0, half, 0}, 4);
+      this.graphicsContext.setStroke(color.brighter());
+      this.graphicsContext.setLineWidth(1.5);
+      this.graphicsContext.strokePolygon(
+         new double[]{0, half, 0, -half},
+         new double[]{-half, 0, half, 0}, 4);
+
+      // Inner dot
+      this.graphicsContext.setFill(color.brighter());
+      this.graphicsContext.fillOval(-2, -2, 4, 4);
+      this.graphicsContext.restore();
    }
 
    public void drawPackage(double x, double y, Color color, double glowIntensity) {

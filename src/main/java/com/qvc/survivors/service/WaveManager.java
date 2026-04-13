@@ -1,6 +1,7 @@
 package com.qvc.survivors.service;
 
 import com.qvc.survivors.model.entity.Enemy;
+import com.qvc.survivors.world.ZoneType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -22,6 +23,7 @@ public class WaveManager {
    private double camY;
    private double camViewW;
    private double camViewH;
+   private double zoneMultiplier = 1.0;
 
    public WaveManager(double fieldWidth, double fieldHeight, EntityPoolManager entityPoolManager) {
       this.fieldWidth = fieldWidth;
@@ -44,6 +46,10 @@ public class WaveManager {
       this.camViewH = viewH;
    }
 
+   public void setCurrentZone(ZoneType zone) {
+      this.zoneMultiplier = zone != null ? zone.getDifficultyMultiplier() : 1.0;
+   }
+
    public void reset() {
       this.currentWave = 1;
       this.waveTimer = 0.0;
@@ -62,7 +68,7 @@ public class WaveManager {
    private void nextWave() {
       this.currentWave++;
       this.waveTimer = 0.0;
-      this.spawnInterval = 2.0 / (1.0 + this.currentWave * 0.1);
+      this.spawnInterval = 2.0 / (1.0 + this.currentWave * 0.1) / this.zoneMultiplier;
    }
 
    public List<Enemy> spawnEnemies() {
@@ -115,9 +121,16 @@ public class WaveManager {
       SpawnPosition position = new SpawnPosition(spawnX, spawnY);
       double vipChance = 0.15 + this.currentWave * 0.02;
       boolean isVIP = RANDOM.nextDouble() < vipChance;
-      return (Enemy)(isVIP
+      Enemy enemy = (Enemy)(isVIP
          ? this.entityPoolManager.obtainVIPCustomer(position.x, position.y)
          : this.entityPoolManager.obtainRegularCustomer(position.x, position.y));
+      if (this.zoneMultiplier > 1.0) {
+         double currentMax = enemy.getHealthComponent().getMaxHealth();
+         enemy.getHealthComponent().setMaxHealth(currentMax * this.zoneMultiplier);
+         enemy.getHealthComponent().heal(currentMax * this.zoneMultiplier);
+         enemy.getDamageComponent().setDamage(enemy.getDamageComponent().getDamage() * this.zoneMultiplier);
+      }
+      return enemy;
    }
 
    @Generated

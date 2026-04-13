@@ -24,6 +24,8 @@ public class Player extends Entity {
    private double survivalTime;
    private double fireTimer;
    private double invulnerabilityTimer;
+   private double coffeeBreakTimer;
+   private boolean employeeDiscountActive;
 
    public Player(double x, double y) {
       this(x, y, null);
@@ -44,6 +46,8 @@ public class Player extends Entity {
       this.fireTimer = 0.0;
       this.invulnerabilityTimer = 0.0;
       this.damageFlashTimer = 0.0;
+      this.coffeeBreakTimer = 0.0;
+      this.employeeDiscountActive = false;
    }
 
    private void applyMetaUpgrades(MetaProgression metaProgression) {
@@ -69,8 +73,9 @@ public class Player extends Entity {
 
    @Override
    public void update(double deltaTime) {
-      this.x = this.x + this.movementComponent.getVelocityX() * deltaTime;
-      this.y = this.y + this.movementComponent.getVelocityY() * deltaTime;
+      double speedMult = this.coffeeBreakTimer > 0.0 ? 1.3 : 1.0;
+      this.x = this.x + this.movementComponent.getVelocityX() * deltaTime * speedMult;
+      this.y = this.y + this.movementComponent.getVelocityY() * deltaTime * speedMult;
       this.survivalTime += deltaTime;
       this.fireTimer += deltaTime;
       if (this.invulnerabilityTimer > 0.0) {
@@ -79,6 +84,10 @@ public class Player extends Entity {
 
       if (this.damageFlashTimer > 0.0) {
          this.damageFlashTimer -= deltaTime;
+      }
+
+      if (this.coffeeBreakTimer > 0.0) {
+         this.coffeeBreakTimer -= deltaTime;
       }
    }
 
@@ -114,6 +123,9 @@ public class Player extends Entity {
 
    public boolean canFire() {
       double fireRate = this.stats.getStat(StatModifier.FIRE_RATE);
+      if (this.coffeeBreakTimer > 0.0) {
+         fireRate *= 1.5;
+      }
       double fireInterval = 1.0 / fireRate;
       return this.fireTimer >= fireInterval;
    }
@@ -136,6 +148,38 @@ public class Player extends Entity {
 
    public boolean isDamageFlashing() {
       return this.damageFlashTimer > 0.0;
+   }
+
+   public void activateCoffeeBreak(double duration) {
+      this.coffeeBreakTimer = duration;
+   }
+
+   public boolean isCoffeeBreakActive() {
+      return this.coffeeBreakTimer > 0.0;
+   }
+
+   public double getCoffeeBreakTimer() {
+      return this.coffeeBreakTimer;
+   }
+
+   public void activateEmployeeDiscount() {
+      this.employeeDiscountActive = true;
+   }
+
+   public boolean isEmployeeDiscountActive() {
+      return this.employeeDiscountActive;
+   }
+
+   public void consumeEmployeeDiscount() {
+      this.employeeDiscountActive = false;
+   }
+
+   public double getEffectiveSpeed() {
+      double baseSpeed = this.movementComponent.getSpeed();
+      if (this.coffeeBreakTimer > 0.0) {
+         return baseSpeed * 1.3;
+      }
+      return baseSpeed;
    }
 
    @Generated
