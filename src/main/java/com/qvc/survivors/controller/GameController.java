@@ -28,10 +28,17 @@ import com.qvc.survivors.world.TileType;
 import com.qvc.survivors.world.WorldGenerator;
 import com.qvc.survivors.world.Zone;
 import com.qvc.survivors.world.ZoneType;
+import com.qvc.survivors.model.achievement.Achievement;
+import com.qvc.survivors.model.achievement.AchievementManager;
+import com.qvc.survivors.model.character.CharacterType;
+import com.qvc.survivors.view.CharacterSelectView;
+import com.qvc.survivors.view.DamageNumberPool;
+import com.qvc.survivors.view.DeathRecapView;
 import com.qvc.survivors.view.GameView;
 import com.qvc.survivors.view.HUDView;
 import com.qvc.survivors.view.LevelUpView;
 import com.qvc.survivors.view.MetaShopView;
+import com.qvc.survivors.view.MinimapView;
 import com.qvc.survivors.view.PerformanceMonitor;
 import com.qvc.survivors.view.PreloaderView;
 import com.qvc.survivors.view.SettingsView;
@@ -65,6 +72,11 @@ public class GameController {
    private final TutorialView tutorialView;
    private final MetaShopView metaShopView;
    private final SettingsView settingsView;
+   private final CharacterSelectView characterSelectView;
+   private final DeathRecapView deathRecapView;
+   private final MinimapView minimapView;
+   private final DamageNumberPool damageNumbers;
+   private final AchievementManager achievementManager;
    private final PerformanceMonitor performanceMonitor;
    private final InputHandler inputHandler;
    private final GamepadHandler gamepadHandler;
@@ -104,6 +116,10 @@ public class GameController {
    private ZoneType currentZone;
    private double zoneNameTimer;
    private String zoneNameDisplay;
+   private BossEnemy activeBoss;
+   private double bossIncomingTimer;
+   private int selectedCharacter;
+   private CharacterType chosenCharacter;
 
    public GameController(Stage stage, SoundEffectGenerator soundGenerator) {
       this.stage = stage;
@@ -118,6 +134,11 @@ public class GameController {
       this.tutorialView = new TutorialView(this.gameView);
       this.metaShopView = new MetaShopView(this.gameView);
       this.settingsView = new SettingsView(this.gameView);
+      this.characterSelectView = new CharacterSelectView(this.gameView);
+      this.deathRecapView = new DeathRecapView(this.gameView);
+      this.minimapView = new MinimapView();
+      this.damageNumbers = new DamageNumberPool();
+      this.achievementManager = new AchievementManager();
       this.performanceMonitor = new PerformanceMonitor();
       this.inputHandler = new InputHandler();
       this.gamepadHandler = new GamepadHandler();
@@ -161,6 +182,9 @@ public class GameController {
       this.currentZone = null;
       this.zoneNameTimer = 0.0;
       this.zoneNameDisplay = null;
+      this.activeBoss = null;
+      this.bossIncomingTimer = 0.0;
+      this.selectedCharacter = 0;
       if (this.settings.isRetroAudio()) {
          this.soundGenerator.startIntroMusic();
       } else {
@@ -222,6 +246,9 @@ public class GameController {
             case TUTORIAL:
                this.updateTutorial();
                break;
+            case CHARACTER_SELECT:
+               this.updateCharacterSelect();
+               break;
             case PLAYING:
                this.updatePlaying(deltaTime);
                break;
@@ -272,8 +299,9 @@ public class GameController {
          KeyCode key = this.inputHandler.getLastPressedKey();
          this.inputHandler.consumeLastPressedKey();
          if (key == KeyCode.SPACE) {
-            GameState nextState = this.isFirstGame ? GameState.TUTORIAL : GameState.PLAYING;
+            GameState nextState = this.isFirstGame ? GameState.TUTORIAL : GameState.CHARACTER_SELECT;
             this.isFirstGame = false;
+            this.selectedCharacter = 0;
             this.startTransition(nextState);
          } else if (key == KeyCode.S) {
             this.preSettingsState = GameState.PRELOADER;
@@ -282,8 +310,9 @@ public class GameController {
          }
       }
       if (this.gamepadHandler.isConfirmJustPressed()) {
-         GameState nextState = this.isFirstGame ? GameState.TUTORIAL : GameState.PLAYING;
+         GameState nextState = this.isFirstGame ? GameState.TUTORIAL : GameState.CHARACTER_SELECT;
          this.isFirstGame = false;
+         this.selectedCharacter = 0;
          this.startTransition(nextState);
       } else if (this.gamepadHandler.isPauseJustPressed()) {
          this.preSettingsState = GameState.PRELOADER;
@@ -299,6 +328,9 @@ public class GameController {
       this.camera.follow(this.player.getX(), this.player.getY(), 5.0, deltaTime);
       this.camera.update(deltaTime);
       this.gameView.updateParticles(deltaTime);
+      this.damageNumbers.update(deltaTime);
+      this.minimapView.updateExplored(this.player.getX(), this.player.getY());
+      this.achievementManager.updateBanner(deltaTime);
 
       // Zone tracking
       Zone zone = this.tileMap.getZoneAt(this.player.getX(), this.player.getY());
@@ -332,12 +364,39 @@ public class GameController {
       List<Enemy> newEnemies = this.waveManager.spawnEnemies();
       this.enemies.addAll(newEnemies);
 
+      // Check boss spawn
+      BossEnemy newBoss = this.waveManager.checkBossSpawn();
+      if (newBoss != null) {
+         this.activeBoss = newBoss;
+         this.enemies.add(newBoss);
+         this.bossIncomingTimer = 2.0;
+         this.soundGenerator.playLevelUpSound();
+         if (this.settings.isScreenShake()) {
+            this.camera.shake(5.0, 0.4);
+         }
+      }
+
+      // Update boss incoming flash
+      if (this.bossIncomingTimer > 0) {
+         this.bossIncomingTimer -= deltaTime;
+      }
+
       for (Enemy enemy : this.enemies) {
          if (enemy.isActive()) {
-            enemy.moveTowards(this.player.getX(), this.player.getY());
+            if (enemy instanceof GenericEnemy ge) {
+               ge.updateBehavior(this.player.getX(), this.player.getY(), deltaTime);
+            } else if (enemy instanceof BossEnemy boss) {
+               boss.updatePhase(deltaTime, this.player.getX(), this.player.getY(), this.enemies);
+               boss.moveTowards(this.player.getX(), this.player.getY());
+            } else {
+               enemy.moveTowards(this.player.getX(), this.player.getY());
+            }
             enemy.update(deltaTime);
          }
       }
+
+      // Handle boss-specific mechanics
+      this.updateBossMechanics(deltaTime);
 
       this.collisionManager.checkEnemyEnemyCollisions(this.enemies);
 
@@ -392,8 +451,12 @@ public class GameController {
             sw.update(deltaTime);
             for (Enemy enemy : this.enemies) {
                if (enemy.isActive() && sw.isEnemyInRadius(enemy)) {
-                  enemy.takeDamage(sw.getDamage());
+                  double swDmg = sw.getDamage();
+                  enemy.takeDamage(swDmg);
                   sw.markHit(enemy);
+                  if (this.settings.isDamageNumbers()) {
+                     this.damageNumbers.spawn(enemy.getX(), enemy.getY() - 0.5, swDmg, Color.WHITE);
+                  }
                   this.gameView.getParticleSystem().createImpact(enemy.getX(), enemy.getY(), Color.MEDIUMPURPLE);
                   if (!enemy.isActive()) {
                      this.player.incrementCustomersSatisfied();
@@ -417,6 +480,10 @@ public class GameController {
          this.selectedLevelUpOption = 0;
          this.gameState = GameState.LEVEL_UP;
       }
+
+      // Achievement checks
+      this.achievementManager.check(this.player, this.waveManager.getCurrentWave(),
+         this.currentZone, this.metaProgressionManager.getMetaProgression());
 
       if (!this.player.isActive()) {
          this.soundGenerator.playGameOverSound();
@@ -551,6 +618,10 @@ public class GameController {
                   enemy.takeDamage(damage);
                   arc.markHit(enemy);
                   applyLifesteal(lifesteal, damage);
+                  if (this.settings.isDamageNumbers()) {
+                     this.damageNumbers.spawn(enemy.getX(), enemy.getY() - 0.5, damage,
+                        isCritical ? Color.YELLOW : Color.WHITE);
+                  }
                   this.gameView.getParticleSystem().createImpact(enemy.getX(), enemy.getY(), Color.CRIMSON);
                   this.soundGenerator.playHitSound();
                   handleEnemyDeath(enemy);
@@ -572,6 +643,10 @@ public class GameController {
 
                enemy.takeDamage(damage);
                applyLifesteal(lifesteal, damage);
+               if (this.settings.isDamageNumbers()) {
+                  this.damageNumbers.spawn(enemy.getX(), enemy.getY() - 0.5, damage,
+                     isCritical ? Color.YELLOW : Color.WHITE);
+               }
                this.soundGenerator.playHitSound();
 
                // Boomerang: pierce through
@@ -597,10 +672,15 @@ public class GameController {
                for (Enemy enemy : this.enemies) {
                   if (enemy.isActive() && this.collisionManager.checkCollision(drone, enemy) && drone.canAttack()) {
                      double damage = drone.getDamageComponent().getDamage();
-                     if (Math.random() < critChance) damage *= critMultiplier;
+                     boolean isCrit = Math.random() < critChance;
+                     if (isCrit) damage *= critMultiplier;
                      enemy.takeDamage(damage);
                      drone.resetAttackTimer();
                      applyLifesteal(lifesteal, damage);
+                     if (this.settings.isDamageNumbers()) {
+                        this.damageNumbers.spawn(enemy.getX(), enemy.getY() - 0.5, damage,
+                           isCrit ? Color.YELLOW : Color.WHITE);
+                     }
                      this.gameView.getParticleSystem().createImpact(enemy.getX(), enemy.getY(), Color.LIGHTGREEN);
                      this.soundGenerator.playHitSound();
                      handleEnemyDeath(enemy);
@@ -610,7 +690,16 @@ public class GameController {
          }
       }
 
+      double healthBefore = this.player.getHealthComponent().getCurrentHealth();
       this.collisionManager.checkPlayerEnemyCollisions(this.player, this.enemies, this.soundGenerator);
+      double healthAfter = this.player.getHealthComponent().getCurrentHealth();
+      if (healthAfter < healthBefore && this.settings.isScreenShake()) {
+         this.camera.shake(3.0, 0.2);
+         if (this.settings.isDamageNumbers()) {
+            this.damageNumbers.spawn(this.player.getX(), this.player.getY() - 0.5,
+               healthBefore - healthAfter, Color.RED);
+         }
+      }
       double pickupRange = this.player.getStats().getStat(StatModifier.PICKUP_RANGE);
 
       for (Collectible collectible : this.collectibles) {
@@ -637,12 +726,142 @@ public class GameController {
 
    private void handleEnemyDeath(Enemy enemy) {
       if (!enemy.isActive()) {
-         Color explosionColor = enemy instanceof VIPCustomer ? Color.RED : Color.ORANGE;
-         this.gameView.getParticleSystem().createExplosion(enemy.getX(), enemy.getY(), explosionColor, 20);
+         // Check for boss death
+         if (enemy instanceof BossEnemy boss) {
+            if (enemy instanceof BoardOfDirectors bod && !bod.isFullyDefeated()) {
+               // Sub-boss defeated, not fully dead yet
+               this.gameView.getParticleSystem().createExplosion(enemy.getX(), enemy.getY(), Color.GOLD, 40);
+               return;
+            }
+            this.gameView.getParticleSystem().createExplosion(enemy.getX(), enemy.getY(), Color.GOLD, 50);
+            this.soundGenerator.playLevelUpSound();
+            if (this.settings.isScreenShake()) {
+               this.camera.shake(8.0, 0.5);
+            }
+            this.achievementManager.onBossDefeated(this.metaProgressionManager.getMetaProgression());
+            this.waveManager.onBossDefeated();
+            this.activeBoss = null;
+            // Spawn treasure chest at boss position
+            this.treasureChests.add(new TreasureChest(boss.getX(), boss.getY()));
+         } else {
+            Color explosionColor = enemy instanceof VIPCustomer ? Color.RED : Color.ORANGE;
+            if (enemy instanceof GenericEnemy ge) {
+               explosionColor = ge.getEnemyType().getColor();
+            }
+            this.gameView.getParticleSystem().createExplosion(enemy.getX(), enemy.getY(), explosionColor, 20);
+         }
          this.soundGenerator.playExplosionSound();
          this.player.incrementCustomersSatisfied();
+
+         // CFO heals from nearby kills
+         if (this.activeBoss instanceof BoardOfDirectors bod) {
+            bod.healFromKill(5.0);
+         }
       } else {
          this.soundGenerator.playEnemyHurtSound();
+      }
+   }
+
+   private void updateBossMechanics(double deltaTime) {
+      if (this.activeBoss == null || !this.activeBoss.isActive()) return;
+
+      if (this.activeBoss instanceof ExecutiveProducer ep) {
+         if (ep.isPendingSpawnRing()) {
+            ep.clearPendingSpawnRing();
+            // Spawn enemies in a ring around the boss
+            for (int i = 0; i < ep.getRingCount(); i++) {
+               double angle = (Math.PI * 2.0 / ep.getRingCount()) * i;
+               double spawnX = ep.getX() + Math.cos(angle) * 3.0;
+               double spawnY = ep.getY() + Math.sin(angle) * 3.0;
+               spawnX = Math.max(0, Math.min(399, spawnX));
+               spawnY = Math.max(0, Math.min(299, spawnY));
+               Enemy minion = this.entityPoolManager.obtainRegularCustomer(spawnX, spawnY);
+               this.enemies.add(minion);
+            }
+         }
+         if (ep.isPendingProjectile()) {
+            ep.clearPendingProjectile();
+            // Fire projectile at player (reuse package entity as boss projectile toward player)
+            double dx = this.player.getX() - ep.getX();
+            double dy = this.player.getY() - ep.getY();
+            double len = Math.sqrt(dx * dx + dy * dy);
+            if (len > 0) {
+               double speed = 30.0;
+               PackageEntity proj = this.entityPoolManager.obtainPackage(
+                  ep.getX(), ep.getY(), (dx / len) * speed, (dy / len) * speed, 15.0);
+               this.projectiles.add(proj);
+            }
+         }
+      } else if (this.activeBoss instanceof WarehouseManager wm) {
+         if (wm.isPendingProjectileBurst()) {
+            wm.clearPendingProjectileBurst();
+            // 8-directional projectiles
+            for (int i = 0; i < 8; i++) {
+               double angle = (Math.PI * 2.0 / 8.0) * i;
+               double speed = 25.0;
+               PackageEntity proj = this.entityPoolManager.obtainPackage(
+                  wm.getX(), wm.getY(), Math.cos(angle) * speed, Math.sin(angle) * speed, 12.0);
+               this.projectiles.add(proj);
+            }
+         }
+      } else if (this.activeBoss instanceof DoorManager dm) {
+         if (dm.isPendingPortalSpawn()) {
+            dm.clearPendingPortalSpawn();
+            // Spawn enemies from portal positions
+            for (double[] portal : dm.getPortalPositions()) {
+               if (Math.random() < 0.5) {
+                  double sx = Math.max(0, Math.min(399, portal[0]));
+                  double sy = Math.max(0, Math.min(299, portal[1]));
+                  Enemy minion = this.entityPoolManager.obtainRegularCustomer(sx, sy);
+                  this.enemies.add(minion);
+               }
+            }
+         }
+      } else if (this.activeBoss instanceof ReturnFraudKingpin rfk) {
+         if (rfk.isPendingDecoySpawn()) {
+            rfk.clearPendingDecoySpawn();
+            // Spawn 4 decoy copies
+            for (int i = 0; i < 4; i++) {
+               double angle = (Math.PI * 2.0 / 4.0) * i;
+               double sx = rfk.getX() + Math.cos(angle) * 3.0;
+               double sy = rfk.getY() + Math.sin(angle) * 3.0;
+               sx = Math.max(0, Math.min(399, sx));
+               sy = Math.max(0, Math.min(299, sy));
+               GenericEnemy decoy = this.entityPoolManager.obtainGenericEnemy(sx, sy, EnemyType.RETURN_FRAUDSTER);
+               decoy.getHealthComponent().reset(20.0);
+               this.enemies.add(decoy);
+            }
+         }
+         // Weapon disable mechanic: slow all weapons
+         if (rfk.isWeaponDisableActive()) {
+            for (Weapon weapon : this.player.getInventory().getWeapons()) {
+               // Skip weapon fire (handled by not calling fire when disabled)
+            }
+         }
+      } else if (this.activeBoss instanceof BoardOfDirectors bod) {
+         if (bod.isPendingProjectile()) {
+            bod.clearPendingProjectile();
+            double dx = this.player.getX() - bod.getX();
+            double dy = this.player.getY() - bod.getY();
+            double len = Math.sqrt(dx * dx + dy * dy);
+            if (len > 0) {
+               double speed = 25.0;
+               PackageEntity proj = this.entityPoolManager.obtainPackage(
+                  bod.getX(), bod.getY(), (dx / len) * speed, (dy / len) * speed, 18.0);
+               this.projectiles.add(proj);
+            }
+         }
+         if (bod.isPendingSummon()) {
+            bod.clearPendingSummon();
+            for (int i = 0; i < 3; i++) {
+               double angle = Math.random() * Math.PI * 2.0;
+               double dist = 3.0 + Math.random() * 3.0;
+               double sx = Math.max(0, Math.min(399, bod.getX() + Math.cos(angle) * dist));
+               double sy = Math.max(0, Math.min(299, bod.getY() + Math.sin(angle) * dist));
+               GenericEnemy minion = this.entityPoolManager.obtainGenericEnemy(sx, sy, EnemyType.INFLUENCER);
+               this.enemies.add(minion);
+            }
+         }
       }
    }
 
@@ -672,7 +891,11 @@ public class GameController {
    private void removeInactiveEntities() {
       for (Enemy enemy : this.enemies) {
          if (!enemy.isActive()) {
-            if (enemy instanceof VIPCustomer vipCustomer) {
+            if (enemy instanceof BossEnemy) {
+               // Boss entities are not pooled
+            } else if (enemy instanceof GenericEnemy genericEnemy) {
+               this.entityPoolManager.freeGenericEnemy(genericEnemy);
+            } else if (enemy instanceof VIPCustomer vipCustomer) {
                this.entityPoolManager.freeVIPCustomer(vipCustomer);
             } else if (enemy instanceof RegularCustomer regularCustomer) {
                this.entityPoolManager.freeRegularCustomer(regularCustomer);
@@ -869,6 +1092,7 @@ public class GameController {
             this.player.getLevel(),
             this.moneyEarnedThisRun
          );
+      // Achievements are already added to the set during gameplay
       this.metaProgressionManager.save();
       this.selectedMetaUpgrade = 0;
       this.gameState = GameState.META_SHOP;
@@ -1001,12 +1225,61 @@ public class GameController {
       if (this.inputHandler.hasLastPressedKey()) {
          KeyCode key = this.inputHandler.consumeLastPressedKey();
          if (key == KeyCode.SPACE) {
-            this.startTransition(GameState.PLAYING);
+            this.selectedCharacter = 0;
+            this.startTransition(GameState.CHARACTER_SELECT);
          }
       }
       if (this.gamepadHandler.isConfirmJustPressed()) {
-         this.startTransition(GameState.PLAYING);
+         this.selectedCharacter = 0;
+         this.startTransition(GameState.CHARACTER_SELECT);
       }
+   }
+
+   private void updateCharacterSelect() {
+      CharacterType[] chars = CharacterType.values();
+      if (this.inputHandler.hasLastPressedKey()) {
+         KeyCode key = this.inputHandler.consumeLastPressedKey();
+         if (key == KeyCode.A || key == KeyCode.LEFT) {
+            this.selectedCharacter = Math.max(0, this.selectedCharacter - 1);
+         } else if (key == KeyCode.D || key == KeyCode.RIGHT) {
+            this.selectedCharacter = Math.min(chars.length - 1, this.selectedCharacter + 1);
+         } else if (key == KeyCode.SPACE) {
+            this.confirmCharacterSelection(chars[this.selectedCharacter]);
+         }
+      }
+      if (this.gamepadHandler.isDpadLeftJustPressed()) {
+         this.selectedCharacter = Math.max(0, this.selectedCharacter - 1);
+      } else if (this.gamepadHandler.isDpadRightJustPressed()) {
+         this.selectedCharacter = Math.min(chars.length - 1, this.selectedCharacter + 1);
+      } else if (this.gamepadHandler.isConfirmJustPressed()) {
+         this.confirmCharacterSelection(chars[this.selectedCharacter]);
+      }
+   }
+
+   private void confirmCharacterSelection(CharacterType character) {
+      this.chosenCharacter = character;
+      // Apply character multipliers to player
+      double baseMaxHealth = this.player.getHealthComponent().getMaxHealth();
+      double newMaxHealth = baseMaxHealth * character.getHealthMult();
+      this.player.getHealthComponent().reset(newMaxHealth);
+
+      double baseSpeed = this.player.getMovementComponent().getSpeed();
+      this.player.getMovementComponent().setSpeed(baseSpeed * character.getSpeedMult());
+
+      // Replace starting weapon with character's weapon
+      if (!character.getStartingWeaponId().equals("package_launcher")) {
+         // Clear default weapon and add character's weapon
+         this.player.getInventory().clearWeapons();
+         Weapon startingWeapon = this.upgradeManager.createWeaponById(character.getStartingWeaponId());
+         if (startingWeapon != null) {
+            this.player.getInventory().addWeapon(startingWeapon);
+         } else {
+            // Fallback to package launcher
+            this.player.getInventory().addWeapon(new com.qvc.survivors.model.weapon.impl.PackageLauncher());
+         }
+      }
+
+      this.startTransition(GameState.PLAYING);
    }
 
    private void updateMetaShop() {
@@ -1081,18 +1354,46 @@ public class GameController {
          this.camera.setEnabled(true);
       } else if (this.gameState == GameState.PLAYING || this.gameState == GameState.LEVEL_UP) {
          this.renderEntities();
+         this.damageNumbers.render(this.gameView.getGraphicsContext(), this.camera);
          this.gameView.renderParticles();
-         this.hudView.render(this.player, this.waveManager.getCurrentWave());
+         this.hudView.render(this.player, this.waveManager.getCurrentWave(), this.currentZone);
+         if (this.activeBoss != null && this.activeBoss.isActive()) {
+            this.hudView.renderBossHealthBar(this.activeBoss);
+         }
+         if (this.bossIncomingTimer > 0) {
+            double alpha = Math.min(1.0, this.bossIncomingTimer);
+            this.gameView.drawBossIncoming(alpha);
+         }
+         this.minimapView.render(this.gameView.getGraphicsContext(),
+            this.gameView.getWidth(), this.gameView.getHeight(),
+            this.camera, this.player, this.enemies, this.tileMap,
+            this.mapCollectibles, this.treasureChests);
+         // Achievement banner
+         Achievement banner = this.achievementManager.getPendingBanner();
+         if (banner != null) {
+            double bannerAlpha = Math.min(1.0, this.achievementManager.getBannerTimer());
+            Color bannerColor = Color.rgb(255, 215, 0, bannerAlpha);
+            String text = "Achievement: " + banner.getDisplayName();
+            double textX = this.gameView.getWidth() / 2.0 - text.length() * 5;
+            this.gameView.drawBox(textX - 10, 70, text.length() * 10 + 20, 28,
+               Color.TRANSPARENT, Color.rgb(0, 0, 0, bannerAlpha * 0.7));
+            this.gameView.drawText(text, textX, 90, bannerColor, 16);
+         }
       }
 
       if (this.gameState == GameState.TUTORIAL) {
          this.camera.setEnabled(false);
          this.tutorialView.render();
          this.camera.setEnabled(true);
+      } else if (this.gameState == GameState.CHARACTER_SELECT) {
+         this.camera.setEnabled(false);
+         this.characterSelectView.render(this.selectedCharacter);
+         this.camera.setEnabled(true);
       } else if (this.gameState == GameState.LEVEL_UP) {
          this.levelUpView.render(this.currentUpgradeOptions);
       } else if (this.gameState == GameState.GAME_OVER) {
-         this.renderGameOver();
+         this.deathRecapView.render(this.player, this.waveManager.getCurrentWave(),
+            this.currentZone, this.player.getInventory());
       } else if (this.gameState == GameState.PAUSED) {
          this.renderPaused();
       } else if (this.gameState == GameState.META_SHOP) {
@@ -1110,10 +1411,14 @@ public class GameController {
             this.camera.setEnabled(false);
             this.tutorialView.render();
             this.camera.setEnabled(true);
+         } else if (this.gameState == GameState.CHARACTER_SELECT) {
+            this.camera.setEnabled(false);
+            this.characterSelectView.render(this.selectedCharacter);
+            this.camera.setEnabled(true);
          } else if (this.gameState == GameState.PLAYING) {
             this.renderEntities();
             this.gameView.renderParticles();
-            this.hudView.render(this.player, this.waveManager.getCurrentWave());
+            this.hudView.render(this.player, this.waveManager.getCurrentWave(), this.currentZone);
          }
 
          this.gameView.drawBox(0.0, 0.0, this.gameView.getWidth(), this.gameView.getHeight(), Color.TRANSPARENT, Color.rgb(0, 0, 0, fadeOutProgress));
@@ -1121,7 +1426,11 @@ public class GameController {
          if (this.targetState == GameState.PLAYING) {
             this.renderEntities();
             this.gameView.renderParticles();
-            this.hudView.render(this.player, this.waveManager.getCurrentWave());
+            this.hudView.render(this.player, this.waveManager.getCurrentWave(), this.currentZone);
+         } else if (this.targetState == GameState.CHARACTER_SELECT) {
+            this.camera.setEnabled(false);
+            this.characterSelectView.render(this.selectedCharacter);
+            this.camera.setEnabled(true);
          }
 
          this.gameView.drawBox(0.0, 0.0, this.gameView.getWidth(), this.gameView.getHeight(), Color.TRANSPARENT, Color.rgb(0, 0, 0, 1.0 - fadeInProgress));
@@ -1195,29 +1504,41 @@ public class GameController {
 
       for (Enemy enemy : this.enemies) {
          if (enemy.isActive() && this.camera.isInView(enemy.getX(), enemy.getY(), 5)) {
-            Color enemyColor;
-            if (enemy.isDamageFlashing()) {
-               enemyColor = Color.WHITE;
+            if (enemy instanceof BossEnemy boss) {
+               Color bossColor = enemy.isDamageFlashing() ? Color.WHITE : Color.rgb(200, 50, 50);
+               double healthPercent = boss.getHealthComponent().getHealthPercentage();
+               this.gameView.drawBoss(boss.getX(), boss.getY(), bossColor, 1.5, boss.getBossName(), healthPercent);
+            } else if (enemy instanceof GenericEnemy ge) {
+               EnemyType et = ge.getEnemyType();
+               Color enemyColor = enemy.isDamageFlashing() ? Color.WHITE : et.getColor();
+               boolean hasShield = et == EnemyType.RETURN_FRAUDSTER && !ge.isShieldBroken();
+               double shieldPercent = hasShield ? ge.getShieldHealth() / 10.0 : 0.0;
+               this.gameView.drawGenericEnemy(ge.getX(), ge.getY(), enemyColor, 0.8,
+                  et.getBehaviorId(), et.getSize(), hasShield, shieldPercent);
             } else {
-               double healthPercent = enemy.getHealthComponent().getHealthPercentage();
-               if (enemy instanceof VIPCustomer) {
-                  if (healthPercent > 0.66) {
-                     enemyColor = Color.RED;
-                  } else if (healthPercent > 0.33) {
+               Color enemyColor;
+               if (enemy.isDamageFlashing()) {
+                  enemyColor = Color.WHITE;
+               } else {
+                  double healthPercent = enemy.getHealthComponent().getHealthPercentage();
+                  if (enemy instanceof VIPCustomer) {
+                     if (healthPercent > 0.66) {
+                        enemyColor = Color.RED;
+                     } else if (healthPercent > 0.33) {
+                        enemyColor = Color.ORANGE;
+                     } else {
+                        enemyColor = Color.YELLOW;
+                     }
+                  } else if (healthPercent > 0.5) {
                      enemyColor = Color.ORANGE;
                   } else {
                      enemyColor = Color.YELLOW;
                   }
-               } else if (healthPercent > 0.5) {
-                  enemyColor = Color.ORANGE;
-               } else {
-                  enemyColor = Color.YELLOW;
                }
+               double glowIntensity = enemy instanceof VIPCustomer ? 1.2 : 0.6;
+               boolean isVIP = enemy instanceof VIPCustomer;
+               this.gameView.drawEnemy(enemy.getX(), enemy.getY(), enemyColor, glowIntensity, isVIP);
             }
-
-            double glowIntensity = enemy instanceof VIPCustomer ? 1.2 : 0.6;
-            boolean isVIP = enemy instanceof VIPCustomer;
-            this.gameView.drawEnemy(enemy.getX(), enemy.getY(), enemyColor, glowIntensity, isVIP);
          }
       }
 
@@ -1255,38 +1576,111 @@ public class GameController {
       }
    }
 
-   private void renderGameOver() {
-      double centerX = this.gameView.getWidth() / 2.0;
-      double centerY = this.gameView.getHeight() / 2.0;
-      this.gameView.drawBox(0.0, 0.0, this.gameView.getWidth(), this.gameView.getHeight(), Color.TRANSPARENT, Color.rgb(0, 0, 0, 0.85));
-      this.gameView.drawText("╔════════════════╗", centerX - 130.0, centerY - 120.0, Color.rgb(255, 100, 100), 32);
-      this.gameView.drawText(" SHIFT ENDED ", centerX - 100.0, centerY - 80.0, Color.rgb(255, 100, 100), 32);
-      this.gameView.drawText("╚════════════════╝", centerX - 130.0, centerY - 40.0, Color.rgb(255, 100, 100), 32);
-      int minutes = (int)this.player.getSurvivalTime() / 60;
-      int seconds = (int)this.player.getSurvivalTime() % 60;
-      this.gameView.drawText(String.format("Total Tips Earned: $%d", this.player.getMoney()), centerX - 120.0, centerY + 10.0, Color.rgb(100, 255, 200), 18);
-      this.gameView.drawText(String.format("Shift Duration: %02d:%02d", minutes, seconds), centerX - 120.0, centerY + 40.0, Color.rgb(100, 200, 255), 18);
-      this.gameView
-         .drawText(String.format("Customers Satisfied: %d", this.player.getCustomersSatisfied()), centerX - 120.0, centerY + 70.0, Color.rgb(100, 200, 255), 18);
-      this.gameView.drawText(String.format("Highest Level: %d", this.player.getLevel()), centerX - 120.0, centerY + 100.0, Color.rgb(100, 200, 255), 18);
-      this.gameView
-         .drawText(String.format("Wave Survived: %d", this.waveManager.getCurrentWave()), centerX - 120.0, centerY + 130.0, Color.rgb(100, 200, 255), 18);
-      this.gameView.drawText("Press SPACE to visit Meta Shop", centerX - 140.0, centerY + 170.0, Color.rgb(255, 255, 100), 16);
-      this.gameView.drawText("or ESC to quit", centerX - 60.0, centerY + 195.0, Color.rgb(150, 150, 150), 14);
-   }
-
    private void renderPaused() {
       double centerX = this.gameView.getWidth() / 2.0;
-      double centerY = this.gameView.getHeight() / 2.0;
-      this.gameView.drawBox(0.0, 0.0, this.gameView.getWidth(), this.gameView.getHeight(), Color.TRANSPARENT, Color.rgb(0, 0, 0, 0.6));
-      double boxWidth = 400.0;
-      double boxHeight = 200.0;
+      double w = this.gameView.getWidth();
+      double h = this.gameView.getHeight();
+      this.gameView.drawBox(0.0, 0.0, w, h, Color.TRANSPARENT, Color.rgb(0, 0, 0, 0.7));
+      double boxWidth = 500.0;
+      double boxHeight = 460.0;
       double boxX = centerX - boxWidth / 2.0;
-      double boxY = centerY - boxHeight / 2.0;
+      double boxY = 40.0;
       this.gameView.drawBox(boxX + 2.0, boxY + 2.0, boxWidth, boxHeight, Color.TRANSPARENT, Color.rgb(100, 200, 255, 0.2));
       this.gameView.drawBox(boxX, boxY, boxWidth, boxHeight, Color.rgb(100, 200, 255), Color.rgb(25, 25, 35));
-      this.gameView.drawText("═══ PAUSED ═══", centerX - 100.0, centerY - 20.0, Color.rgb(100, 255, 200), 28);
-      this.gameView.drawText("Press P or ESC to continue", centerX - 140.0, centerY + 40.0, Color.rgb(220, 230, 255), 16);
-      this.gameView.drawText("Press S for Settings", centerX - 100.0, centerY + 70.0, Color.rgb(150, 200, 255), 14);
+
+      this.gameView.drawText("═══ PAUSED ═══", centerX - 100.0, boxY + 35, Color.rgb(100, 255, 200), 28);
+
+      double col1 = boxX + 20;
+      double col2 = boxX + boxWidth / 2.0 + 10;
+      double y = boxY + 65;
+      Color label = Color.rgb(150, 180, 220);
+      Color value = Color.rgb(220, 240, 255);
+
+      // Stats
+      int minutes = (int) this.player.getSurvivalTime() / 60;
+      int seconds = (int) this.player.getSurvivalTime() % 60;
+      this.gameView.drawText(String.format("Time: %02d:%02d", minutes, seconds), col1, y, value, 14);
+      this.gameView.drawText("Wave: " + this.waveManager.getCurrentWave(), col2, y, value, 14);
+      y += 22;
+      this.gameView.drawText("Kills: " + this.player.getCustomersSatisfied(), col1, y, value, 14);
+      String zoneName = this.currentZone != null ? this.currentZone.getDisplayName() : "The Void";
+      this.gameView.drawText("Zone: " + zoneName, col2, y, value, 14);
+      y += 30;
+
+      // Weapons
+      this.gameView.drawText("-- Weapons --", col1, y, Color.rgb(100, 200, 255), 14);
+      y += 20;
+      for (Weapon weapon : this.player.getInventory().getWeapons()) {
+         this.gameView.drawText(weapon.getName() + " Lv." + weapon.getLevel() + "/" + weapon.getMaxLevel(),
+            col1, y, Color.rgb(180, 220, 255), 12);
+         y += 18;
+      }
+      y += 8;
+
+      // Passives
+      this.gameView.drawText("-- Passives --", col1, y, Color.rgb(100, 200, 255), 14);
+      y += 20;
+      if (this.player.getInventory().getPassives().isEmpty()) {
+         this.gameView.drawText("None", col1, y, Color.rgb(120, 130, 150), 12);
+         y += 18;
+      } else {
+         for (PassiveItem passive : this.player.getInventory().getPassives()) {
+            this.gameView.drawText(passive.getName() + " Lv." + passive.getLevel() + "/" + passive.getMaxLevel(),
+               col1, y, Color.rgb(180, 220, 200), 12);
+            y += 18;
+         }
+      }
+
+      y = boxY + boxHeight - 60;
+      this.gameView.drawText("P/ESC to resume", centerX - 80, y, Color.rgb(220, 230, 255), 14);
+      this.gameView.drawText("S for Settings", centerX - 65, y + 22, Color.rgb(150, 200, 255), 12);
+   }
+
+   // --- Audio routing helpers ---
+
+   private void stopAllMusic() {
+      this.soundGenerator.stopIntroMusic();
+      this.soundGenerator.stopMetaShopMusic();
+      this.musicManager.stop();
+   }
+
+   private void playSfxShoot() {
+      if (this.settings.isRetroAudio()) { this.soundGenerator.playShootSound(); }
+      else { this.sfxManager.playShoot(); }
+   }
+
+   private void playSfxHit() {
+      if (this.settings.isRetroAudio()) { this.soundGenerator.playHitSound(); }
+      else { this.sfxManager.playHit(); }
+   }
+
+   private void playSfxExplosion() {
+      if (this.settings.isRetroAudio()) { this.soundGenerator.playExplosionSound(); }
+      else { this.sfxManager.playExplosion(); }
+   }
+
+   private void playSfxCollect() {
+      if (this.settings.isRetroAudio()) { this.soundGenerator.playCollectSound(); }
+      else { this.sfxManager.playCollect(); }
+   }
+
+   private void playSfxLevelUp() {
+      if (this.settings.isRetroAudio()) { this.soundGenerator.playLevelUpSound(); }
+      else { this.sfxManager.playLevelUp(); }
+   }
+
+   private void playSfxGameOver() {
+      if (this.settings.isRetroAudio()) { this.soundGenerator.playGameOverSound(); }
+      else { this.sfxManager.playGameOver(); }
+   }
+
+   private void playSfxEnemyHurt() {
+      if (this.settings.isRetroAudio()) { this.soundGenerator.playEnemyHurtSound(); }
+      else { this.sfxManager.playEnemyHurt(); }
+   }
+
+   private void playSfxPlayerHurt() {
+      if (this.settings.isRetroAudio()) { this.soundGenerator.playPlayerHurtSound(); }
+      else { this.sfxManager.playPlayerHurt(); }
    }
 }

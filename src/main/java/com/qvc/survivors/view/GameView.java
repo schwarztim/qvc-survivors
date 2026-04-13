@@ -691,4 +691,224 @@ public class GameView extends Canvas {
    public Camera getCamera() {
       return this.camera;
    }
+
+   public void drawGenericEnemy(double x, double y, Color color, double glowIntensity, String behaviorId, double size, boolean hasShield, double shieldPercent) {
+      double pixelX = camera.worldToScreenX(x);
+      double pixelY = camera.worldToScreenY(y);
+      double centerX = pixelX + TILE_SIZE_HALF;
+      double centerY = pixelY + TILE_SIZE_HALF;
+      double drawSize = size * (TILE_SIZE / 1.8) * 0.75;
+
+      // Glow
+      this.drawGlowEffect(centerX, centerY, color, glowIntensity);
+
+      this.graphicsContext.save();
+      this.graphicsContext.translate(centerX, centerY);
+
+      switch (behaviorId) {
+         case "charge": // Karen - angular, angry
+            this.graphicsContext.setFill(color.darker().darker());
+            double[] kxPts = {0, drawSize/2, drawSize/4, -drawSize/4, -drawSize/2};
+            double[] kyPts = {-drawSize/2, drawSize/4, drawSize/2, drawSize/2, drawSize/4};
+            this.graphicsContext.fillPolygon(kxPts, kyPts, 5);
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(2.0);
+            this.graphicsContext.strokePolygon(kxPts, kyPts, 5);
+            // Angry eyes
+            this.graphicsContext.setFill(Color.WHITE);
+            this.graphicsContext.fillOval(-drawSize/4-2, -drawSize/8, 4, 3);
+            this.graphicsContext.fillOval(drawSize/4-2, -drawSize/8, 4, 3);
+            // Angry brow lines
+            this.graphicsContext.setStroke(color.darker().darker());
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeLine(-drawSize/3, -drawSize/4, -drawSize/8, -drawSize/6);
+            this.graphicsContext.strokeLine(drawSize/3, -drawSize/4, drawSize/8, -drawSize/6);
+            break;
+
+         case "swarm": // Coupon Clipper - small, circular clusters
+            this.graphicsContext.setFill(color.darker());
+            this.graphicsContext.fillOval(-drawSize/2, -drawSize/2, drawSize, drawSize);
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeOval(-drawSize/2, -drawSize/2, drawSize, drawSize);
+            // Scissors icon
+            this.graphicsContext.setStroke(color.brighter());
+            this.graphicsContext.strokeLine(-drawSize/4, -drawSize/6, drawSize/4, drawSize/6);
+            this.graphicsContext.strokeLine(drawSize/4, -drawSize/6, -drawSize/4, drawSize/6);
+            break;
+
+         case "teleport": // Scalper Bot - glitchy/digital
+            double flicker = (this.cachedFrameTime % 200 < 50) ? 0.3 : 1.0;
+            this.graphicsContext.setGlobalAlpha(flicker);
+            this.graphicsContext.setFill(color.darker());
+            this.graphicsContext.fillRect(-drawSize/2, -drawSize/2, drawSize, drawSize);
+            this.graphicsContext.setStroke(color.brighter());
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeRect(-drawSize/2, -drawSize/2, drawSize, drawSize);
+            // Digital lines
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.strokeLine(-drawSize/3, 0, drawSize/3, 0);
+            this.graphicsContext.strokeLine(0, -drawSize/3, 0, drawSize/3);
+            this.graphicsContext.setGlobalAlpha(1.0);
+            break;
+
+         case "circle": // Influencer - glowing aura, recording dot
+            double auraSize = drawSize * 1.3;
+            this.graphicsContext.setGlobalAlpha(0.2);
+            this.graphicsContext.setFill(color);
+            this.graphicsContext.fillOval(-auraSize/2, -auraSize/2, auraSize, auraSize);
+            this.graphicsContext.setGlobalAlpha(1.0);
+            this.graphicsContext.setFill(color.darker());
+            this.graphicsContext.fillOval(-drawSize/2, -drawSize/2, drawSize, drawSize);
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(2.0);
+            this.graphicsContext.strokeOval(-drawSize/2, -drawSize/2, drawSize, drawSize);
+            // Recording dot (red)
+            this.graphicsContext.setFill(Color.RED);
+            double recPulse = Math.sin(this.cachedFrameTime * 0.005) > 0 ? 1.0 : 0.3;
+            this.graphicsContext.setGlobalAlpha(recPulse);
+            this.graphicsContext.fillOval(drawSize/3, -drawSize/2, 4, 4);
+            this.graphicsContext.setGlobalAlpha(1.0);
+            break;
+
+         case "ranged": // QVC Superfan - small with throwing arm
+            this.graphicsContext.setFill(color.darker());
+            this.graphicsContext.fillOval(-drawSize/2, -drawSize/2, drawSize, drawSize);
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(1.5);
+            this.graphicsContext.strokeOval(-drawSize/2, -drawSize/2, drawSize, drawSize);
+            // Arm/throwing indicator
+            this.graphicsContext.setStroke(color.brighter());
+            this.graphicsContext.setLineWidth(2.0);
+            this.graphicsContext.strokeLine(drawSize/3, 0, drawSize/2 + 3, -drawSize/4);
+            break;
+
+         case "stationary": // Mystery Box - pulsating box
+            double boxPulse = 1.0 + Math.sin(this.cachedFrameTime * 0.004) * 0.15;
+            double boxSize = drawSize * boxPulse;
+            this.graphicsContext.setFill(color.darker());
+            this.graphicsContext.fillRect(-boxSize/2, -boxSize/2, boxSize, boxSize);
+            this.graphicsContext.setStroke(color.brighter());
+            this.graphicsContext.setLineWidth(2.5);
+            this.graphicsContext.strokeRect(-boxSize/2, -boxSize/2, boxSize, boxSize);
+            // Question mark
+            this.graphicsContext.setFill(Color.WHITE);
+            Font qFont = Font.font("Courier New", FontWeight.BOLD, (int)(boxSize * 0.5));
+            this.graphicsContext.setFont(qFont);
+            this.graphicsContext.fillText("?", -boxSize * 0.15, boxSize * 0.15);
+            break;
+
+         default: // chase (Cart Pusher, Return Fraudster, etc.) - wide body
+            this.graphicsContext.setFill(color.darker().darker());
+            double bodyW = drawSize * 1.2;
+            double bodyH = drawSize;
+            this.graphicsContext.fillRect(-bodyW/2, -bodyH/2, bodyW, bodyH);
+            this.graphicsContext.setStroke(color);
+            this.graphicsContext.setLineWidth(2.0);
+            this.graphicsContext.strokeRect(-bodyW/2, -bodyH/2, bodyW, bodyH);
+            // Eyes
+            double eSize = drawSize / 6.0;
+            this.graphicsContext.setFill(Color.WHITE);
+            this.graphicsContext.fillOval(-bodyW/4 - eSize/2, -bodyH/6, eSize, eSize);
+            this.graphicsContext.fillOval(bodyW/4 - eSize/2, -bodyH/6, eSize, eSize);
+            break;
+      }
+
+      // Shield overlay for Return Fraudster
+      if (hasShield && shieldPercent > 0) {
+         this.graphicsContext.setGlobalAlpha(0.4 * shieldPercent);
+         this.graphicsContext.setFill(Color.rgb(100, 200, 255));
+         this.graphicsContext.fillRect(-drawSize/2 - 3, -drawSize/2, drawSize/3, drawSize);
+         this.graphicsContext.setGlobalAlpha(1.0);
+      }
+
+      this.graphicsContext.restore();
+   }
+
+   public void drawBoss(double x, double y, Color color, double glowIntensity, String bossType, double healthPercent) {
+      double pixelX = camera.worldToScreenX(x);
+      double pixelY = camera.worldToScreenY(y);
+      double centerX = pixelX + TILE_SIZE_HALF;
+      double centerY = pixelY + TILE_SIZE_HALF;
+      double baseSize = 30.0;
+
+      // Large glow
+      this.graphicsContext.save();
+      this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
+      double glowRadius = 50.0 * glowIntensity;
+      RadialGradient gradient = new RadialGradient(0, 0, centerX, centerY, glowRadius, false, CycleMethod.NO_CYCLE,
+         new Stop[]{
+            new Stop(0.0, Color.rgb((int)(color.getRed()*255), (int)(color.getGreen()*255), (int)(color.getBlue()*255), 0.4 * glowIntensity)),
+            new Stop(1.0, Color.TRANSPARENT)
+         });
+      this.graphicsContext.setFill(gradient);
+      this.graphicsContext.fillOval(centerX - glowRadius, centerY - glowRadius, glowRadius * 2, glowRadius * 2);
+      this.graphicsContext.restore();
+
+      this.graphicsContext.save();
+      this.graphicsContext.translate(centerX, centerY);
+
+      // Main body - larger oval
+      this.graphicsContext.setFill(color.darker().darker());
+      this.graphicsContext.fillOval(-baseSize/2, -baseSize/2.2, baseSize, baseSize * 1.1);
+      this.graphicsContext.setStroke(color);
+      this.graphicsContext.setLineWidth(3.0);
+      this.graphicsContext.strokeOval(-baseSize/2, -baseSize/2.2, baseSize, baseSize * 1.1);
+
+      // Inner detail
+      this.graphicsContext.setFill(color.darker());
+      this.graphicsContext.fillOval(-baseSize/3, -baseSize/3, baseSize/1.5, baseSize/1.5);
+
+      // Eyes (larger, more menacing)
+      double eyeSize = baseSize / 5.0;
+      this.graphicsContext.setFill(Color.WHITE);
+      this.graphicsContext.fillOval(-baseSize/4 - eyeSize/2, -baseSize/6, eyeSize, eyeSize);
+      this.graphicsContext.fillOval(baseSize/4 - eyeSize/2, -baseSize/6, eyeSize, eyeSize);
+      this.graphicsContext.setFill(Color.RED);
+      this.graphicsContext.fillOval(-baseSize/4, -baseSize/6 + eyeSize/4, eyeSize/2, eyeSize/2);
+      this.graphicsContext.fillOval(baseSize/4 - eyeSize/4, -baseSize/6 + eyeSize/4, eyeSize/2, eyeSize/2);
+
+      // Crown/indicator on top
+      this.graphicsContext.setFill(Color.GOLD);
+      double crownSize = baseSize / 3.0;
+      this.graphicsContext.fillPolygon(
+         new double[]{-crownSize, -crownSize/2, 0, crownSize/2, crownSize},
+         new double[]{-baseSize/2, -baseSize/2 - crownSize*0.7, -baseSize/2 - crownSize*0.3, -baseSize/2 - crownSize*0.7, -baseSize/2},
+         5);
+      this.graphicsContext.setStroke(Color.GOLD.brighter());
+      this.graphicsContext.setLineWidth(1.5);
+      this.graphicsContext.strokePolygon(
+         new double[]{-crownSize, -crownSize/2, 0, crownSize/2, crownSize},
+         new double[]{-baseSize/2, -baseSize/2 - crownSize*0.7, -baseSize/2 - crownSize*0.3, -baseSize/2 - crownSize*0.7, -baseSize/2},
+         5);
+
+      // Health-based rage indicator
+      if (healthPercent < 0.5) {
+         double rageAlpha = (0.5 - healthPercent) * 2.0;
+         double ragePulse = 0.5 + 0.5 * Math.sin(this.cachedFrameTime * 0.01);
+         this.graphicsContext.setGlobalAlpha(rageAlpha * ragePulse * 0.3);
+         this.graphicsContext.setFill(Color.RED);
+         double rageSize = baseSize * 1.5;
+         this.graphicsContext.fillOval(-rageSize/2, -rageSize/2, rageSize, rageSize);
+         this.graphicsContext.setGlobalAlpha(1.0);
+      }
+
+      this.graphicsContext.restore();
+
+      // Highlight
+      this.graphicsContext.save();
+      this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
+      this.graphicsContext.setFill(color.brighter());
+      this.graphicsContext.fillOval(centerX - baseSize/4, centerY - baseSize/3, baseSize/3, baseSize/4);
+      this.graphicsContext.restore();
+   }
+
+   public void drawBossIncoming(double alpha) {
+      double centerX = this.getWidth() / 2.0;
+      double centerY = this.getHeight() / 2.0;
+      this.graphicsContext.save();
+      this.graphicsContext.setGlobalAlpha(alpha);
+      this.drawText("BOSS INCOMING", centerX - 100, centerY - 50, Color.rgb(255, 50, 50), 36);
+      this.graphicsContext.restore();
+   }
 }

@@ -49,6 +49,10 @@ public class PlayerInventory {
         return passives.size() >= MAX_PASSIVES;
     }
 
+    public void clearWeapons() {
+        weapons.clear();
+    }
+
     public List<Weapon> getWeapons() {
         return Collections.unmodifiableList(weapons);
     }

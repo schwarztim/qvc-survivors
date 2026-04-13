@@ -3,6 +3,7 @@ package com.qvc.survivors.view;
 import com.qvc.survivors.model.entity.BossEnemy;
 import com.qvc.survivors.model.entity.BoardOfDirectors;
 import com.qvc.survivors.model.entity.Player;
+import com.qvc.survivors.world.ZoneType;
 import javafx.scene.paint.Color;
 
 public class HUDView {
@@ -16,9 +17,14 @@ public class HUDView {
    }
 
    public void render(Player player, int currentWave) {
+      render(player, currentWave, null);
+   }
+
+   public void render(Player player, int currentWave, ZoneType currentZone) {
       int canvasWidth = (int)this.gameView.getWidth();
       this.renderLeftHUD(player);
       this.renderRightHUD(player, currentWave, canvasWidth);
+      this.renderTopCenter(player, currentZone, canvasWidth);
    }
 
    public void renderBossHealthBar(BossEnemy boss) {
@@ -98,6 +104,34 @@ public class HUDView {
          this.gameView.drawBox(x, y, filledWidth, barHeight, Color.TRANSPARENT, barColor);
          Color brightGlow = Color.rgb((int)(barColor.getRed() * 255.0), (int)(barColor.getGreen() * 255.0), (int)(barColor.getBlue() * 255.0), 0.5);
          this.gameView.drawBox(x, y, filledWidth, barHeight / 2.0, Color.TRANSPARENT, brightGlow);
+      }
+   }
+
+   private void renderTopCenter(Player player, ZoneType currentZone, int canvasWidth) {
+      double centerX = canvasWidth / 2.0;
+
+      // Zone name (small, top-center)
+      if (currentZone != null) {
+         String zoneName = currentZone.getDisplayName();
+         this.gameView.drawText(zoneName, centerX - zoneName.length() * 3.5, 18, Color.rgb(180, 200, 230, 0.6), 12);
+      }
+
+      // Weapon count
+      int weaponCount = player.getInventory().getWeapons().size();
+      String weaponText = "Weapons: " + weaponCount + "/6";
+      this.gameView.drawText(weaponText, centerX - 50, 34, Color.rgb(100, 200, 255, 0.7), 11);
+
+      // Prominent XP bar (top center, wider)
+      int barWidth = 300;
+      int barHeight = 6;
+      int barX = (int)(centerX - barWidth / 2.0);
+      int barY = 40;
+      double progress = player.getExperience() / player.getExperienceThreshold();
+      progress = Math.min(progress, 1.0);
+      this.gameView.drawBox(barX, barY, barWidth, barHeight, Color.TRANSPARENT, Color.rgb(30, 35, 50, 0.6));
+      int filledWidth = (int)(barWidth * progress);
+      if (filledWidth > 0) {
+         this.gameView.drawBox(barX, barY, filledWidth, barHeight, Color.TRANSPARENT, Color.rgb(100, 200, 255, 0.8));
       }
    }
 

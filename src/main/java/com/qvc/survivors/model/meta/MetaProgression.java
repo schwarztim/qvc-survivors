@@ -2,7 +2,9 @@ package com.qvc.survivors.model.meta;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import lombok.Generated;
 
 public class MetaProgression implements Serializable {
@@ -15,6 +17,7 @@ public class MetaProgression implements Serializable {
    private int highestWave = 1;
    private int highestLevel = 1;
    private final Map<MetaUpgradeType, Integer> upgradeLevels = new HashMap<>();
+   private final Set<String> unlockedAchievements = new HashSet<>();
 
    public MetaProgression() {
       for (MetaUpgradeType type : MetaUpgradeType.values()) {
@@ -88,7 +91,15 @@ public class MetaProgression implements Serializable {
          sb.append("\n    \"").append(entry.getKey().name()).append("\": ").append(entry.getValue());
          first = false;
       }
-      sb.append("\n  }\n");
+      sb.append("\n  },\n");
+      sb.append("  \"unlockedAchievements\": [");
+      boolean firstAch = true;
+      for (String ach : unlockedAchievements) {
+         if (!firstAch) sb.append(",");
+         sb.append("\"").append(ach).append("\"");
+         firstAch = false;
+      }
+      sb.append("]\n");
       sb.append("}");
       return sb.toString();
    }
@@ -98,8 +109,32 @@ public class MetaProgression implements Serializable {
       // Parse simple key-value pairs from JSON
       String[] lines = json.split("\n");
       boolean inUpgrades = false;
+      boolean inAchievements = false;
       for (String line : lines) {
          line = line.trim();
+         if (line.startsWith("\"unlockedAchievements\"")) {
+            inAchievements = true;
+            // Inline parse: extract bracket content
+            int bracketStart = line.indexOf('[');
+            int bracketEnd = line.indexOf(']');
+            if (bracketStart >= 0 && bracketEnd > bracketStart) {
+               String content = line.substring(bracketStart + 1, bracketEnd);
+               for (String token : content.split(",")) {
+                  String achName = token.trim().replace("\"", "");
+                  if (!achName.isEmpty()) {
+                     p.unlockedAchievements.add(achName);
+                  }
+               }
+               inAchievements = false;
+            }
+            continue;
+         }
+         if (inAchievements) {
+            if (line.contains("]")) { inAchievements = false; continue; }
+            String achName = line.replace("\"", "").replace(",", "").trim();
+            if (!achName.isEmpty()) p.unlockedAchievements.add(achName);
+            continue;
+         }
          if (line.startsWith("\"upgradeLevels\"")) {
             inUpgrades = true;
             continue;
@@ -177,6 +212,10 @@ public class MetaProgression implements Serializable {
    @Generated
    public Map<MetaUpgradeType, Integer> getUpgradeLevels() {
       return this.upgradeLevels;
+   }
+
+   public Set<String> getUnlockedAchievements() {
+      return this.unlockedAchievements;
    }
 
    @Generated
