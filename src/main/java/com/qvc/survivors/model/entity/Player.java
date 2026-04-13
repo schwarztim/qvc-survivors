@@ -6,6 +6,8 @@ import com.qvc.survivors.model.meta.MetaProgression;
 import com.qvc.survivors.model.meta.MetaUpgradeType;
 import com.qvc.survivors.model.upgrade.PlayerStats;
 import com.qvc.survivors.model.upgrade.StatModifier;
+import com.qvc.survivors.model.weapon.PlayerInventory;
+import com.qvc.survivors.model.weapon.impl.PackageLauncher;
 import lombok.Generated;
 
 public class Player extends Entity {
@@ -14,6 +16,7 @@ public class Player extends Entity {
    private final HealthComponent healthComponent;
    private final MovementComponent movementComponent;
    private final PlayerStats stats = new PlayerStats();
+   private final PlayerInventory inventory = new PlayerInventory();
    private final double xpMultiplier;
    private int level;
    private double experience;
@@ -22,6 +25,7 @@ public class Player extends Entity {
    private int customersSatisfied;
    private double damageFlashTimer;
    private double survivalTime;
+   private double facingAngle;
    private double fireTimer;
    private double invulnerabilityTimer;
    private double coffeeBreakTimer;
@@ -48,6 +52,8 @@ public class Player extends Entity {
       this.damageFlashTimer = 0.0;
       this.coffeeBreakTimer = 0.0;
       this.employeeDiscountActive = false;
+      this.facingAngle = 0.0;
+      this.inventory.addWeapon(new PackageLauncher());
    }
 
    private void applyMetaUpgrades(MetaProgression metaProgression) {
@@ -74,8 +80,12 @@ public class Player extends Entity {
    @Override
    public void update(double deltaTime) {
       double speedMult = this.coffeeBreakTimer > 0.0 ? 1.3 : 1.0;
-      this.x = this.x + this.movementComponent.getVelocityX() * deltaTime * speedMult;
-      this.y = this.y + this.movementComponent.getVelocityY() * deltaTime * speedMult;
+      double passiveSpeedBoost = 1.0 + this.inventory.getTotalStatBoost(StatModifier.MOVEMENT_SPEED);
+      this.x = this.x + this.movementComponent.getVelocityX() * deltaTime * speedMult * passiveSpeedBoost;
+      this.y = this.y + this.movementComponent.getVelocityY() * deltaTime * speedMult * passiveSpeedBoost;
+      if (this.movementComponent.getVelocityX() != 0.0 || this.movementComponent.getVelocityY() != 0.0) {
+         this.facingAngle = Math.atan2(this.movementComponent.getVelocityY(), this.movementComponent.getVelocityX());
+      }
       this.survivalTime += deltaTime;
       this.fireTimer += deltaTime;
       if (this.invulnerabilityTimer > 0.0) {
@@ -92,9 +102,12 @@ public class Player extends Entity {
    }
 
    public void addExperience(double amount) {
-      double adjustedAmount = amount * this.xpMultiplier;
-      this.experience += adjustedAmount;
-      this.money += (int)adjustedAmount;
+      double xpBonus = 1.0 + this.inventory.getTotalStatBoost(StatModifier.XP_BONUS);
+      double moneyBonus = 1.0 + this.inventory.getTotalStatBoost(StatModifier.MONEY_BONUS);
+      double adjustedXp = amount * this.xpMultiplier * xpBonus;
+      double adjustedMoney = amount * moneyBonus;
+      this.experience += adjustedXp;
+      this.money += (int)adjustedMoney;
    }
 
    public boolean canLevelUp() {
@@ -113,7 +126,9 @@ public class Player extends Entity {
 
    public void takeDamage(double damage) {
       if (!(this.invulnerabilityTimer > 0.0)) {
-         this.healthComponent.damage(damage);
+         double reduction = this.inventory.getTotalStatBoost(StatModifier.DAMAGE_REDUCTION);
+         double effectiveDamage = damage * Math.max(0.0, 1.0 - reduction);
+         this.healthComponent.damage(effectiveDamage);
          this.damageFlashTimer = 0.2;
          if (!this.healthComponent.isAlive()) {
             this.active = false;
@@ -180,6 +195,14 @@ public class Player extends Entity {
          return baseSpeed * 1.3;
       }
       return baseSpeed;
+   }
+
+   public PlayerInventory getInventory() {
+      return this.inventory;
+   }
+
+   public double getFacingAngle() {
+      return this.facingAngle;
    }
 
    @Generated

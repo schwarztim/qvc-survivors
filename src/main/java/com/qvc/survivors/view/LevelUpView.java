@@ -1,6 +1,7 @@
 package com.qvc.survivors.view;
 
 import com.qvc.survivors.model.upgrade.Upgrade;
+import com.qvc.survivors.model.upgrade.Upgrade.ChoiceType;
 import java.util.List;
 import javafx.scene.paint.Color;
 
@@ -50,7 +51,25 @@ public class LevelUpView {
          this.gameView.drawBox(optionX, optionY - 25.0, boxWidth - 60.0, 70.0, BORDER_COLOR, Color.rgb(30, 35, 45));
          Color numberColor = Color.hsb((System.currentTimeMillis() * 0.2 + i * 60) % 360.0, 0.8, 1.0);
          this.gameView.drawText(String.format("[%d]", i + 1), optionX + 15.0, optionY, numberColor, 20);
-         this.gameView.drawText(upgrade.getName(), optionX + 55.0, optionY, HIGHLIGHT_COLOR, 18);
+
+         // Color-code by type
+         Color nameColor = HIGHLIGHT_COLOR;
+         String prefix = "";
+         if (upgrade.getChoiceType() == ChoiceType.NEW_WEAPON) {
+            nameColor = Color.rgb(100, 200, 255);
+            prefix = "[WEAPON] ";
+         } else if (upgrade.getChoiceType() == ChoiceType.NEW_PASSIVE) {
+            nameColor = Color.rgb(200, 150, 255);
+            prefix = "[PASSIVE] ";
+         } else if (upgrade.getChoiceType() == ChoiceType.WEAPON_LEVELUP) {
+            nameColor = Color.rgb(100, 255, 200);
+            prefix = "[W-UP] ";
+         } else if (upgrade.getChoiceType() == ChoiceType.PASSIVE_LEVELUP) {
+            nameColor = Color.rgb(255, 200, 100);
+            prefix = "[P-UP] ";
+         }
+
+         this.gameView.drawText(prefix + upgrade.getName(), optionX + 55.0, optionY, nameColor, 18);
          this.gameView.drawText(upgrade.getDescription(), optionX + 55.0, optionY + 25.0, TEXT_COLOR, 14);
       }
 

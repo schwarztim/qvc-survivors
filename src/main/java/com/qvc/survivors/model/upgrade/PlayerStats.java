@@ -1,5 +1,6 @@
 package com.qvc.survivors.model.upgrade;
 
+import com.qvc.survivors.model.weapon.PlayerInventory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -38,6 +39,14 @@ public class PlayerStats {
 
    public double getStat(StatModifier modifier) {
       return this.stats.getOrDefault(modifier, 0.0);
+   }
+
+   public double getEffectiveStat(StatModifier modifier, PlayerInventory inventory) {
+      double base = getStat(modifier);
+      if (inventory != null) {
+         base += inventory.getTotalStatBoost(modifier);
+      }
+      return base;
    }
 
    @Generated

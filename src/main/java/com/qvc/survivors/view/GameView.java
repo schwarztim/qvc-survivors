@@ -536,6 +536,92 @@ public class GameView extends Canvas {
       this.graphicsContext.restore();
    }
 
+   public void drawBoomerang(double x, double y, double rotation) {
+      double pixelX = camera.worldToScreenX(x);
+      double pixelY = camera.worldToScreenY(y);
+      double centerX = pixelX + TILE_SIZE_HALF;
+      double centerY = pixelY + TILE_SIZE_HALF;
+      double size = 10.0;
+
+      this.graphicsContext.save();
+      this.graphicsContext.translate(centerX, centerY);
+      this.graphicsContext.rotate(Math.toDegrees(rotation));
+
+      // Cart body
+      this.graphicsContext.setFill(Color.SILVER);
+      this.graphicsContext.fillRect(-size / 2.0, -size / 4.0, size, size / 2.0);
+      this.graphicsContext.setStroke(Color.LIGHTGRAY);
+      this.graphicsContext.setLineWidth(2.0);
+      this.graphicsContext.strokeRect(-size / 2.0, -size / 4.0, size, size / 2.0);
+
+      // Handle
+      this.graphicsContext.setStroke(Color.GRAY);
+      this.graphicsContext.strokeLine(-size / 2.0, -size / 4.0, -size / 2.0 - 3, -size / 2.0);
+
+      this.graphicsContext.restore();
+
+      // Glow
+      this.drawGlowEffect(centerX, centerY, Color.SILVER, 0.5);
+   }
+
+   public void drawArcSlash(double x, double y, double facingAngle, double range, double progress) {
+      double pixelX = camera.worldToScreenX(x);
+      double pixelY = camera.worldToScreenY(y);
+      double centerX = pixelX + TILE_SIZE_HALF;
+      double centerY = pixelY + TILE_SIZE_HALF;
+      double pixelRange = range;
+      double alpha = Math.max(0.0, 1.0 - progress);
+
+      this.graphicsContext.save();
+      this.graphicsContext.setGlobalAlpha(alpha * 0.8);
+      this.graphicsContext.setStroke(Color.CRIMSON);
+      this.graphicsContext.setLineWidth(3.0 * (1.0 - progress * 0.5));
+
+      double startAngleDeg = Math.toDegrees(-facingAngle) - 45;
+      this.graphicsContext.strokeArc(
+              centerX - pixelRange, centerY - pixelRange,
+              pixelRange * 2, pixelRange * 2,
+              startAngleDeg, 90,
+              javafx.scene.shape.ArcType.OPEN);
+
+      // Second slash line for visual effect
+      this.graphicsContext.setStroke(Color.rgb(255, 100, 100, alpha * 0.5));
+      this.graphicsContext.setLineWidth(6.0 * (1.0 - progress));
+      this.graphicsContext.strokeArc(
+              centerX - pixelRange * 0.7, centerY - pixelRange * 0.7,
+              pixelRange * 1.4, pixelRange * 1.4,
+              startAngleDeg + 10, 70,
+              javafx.scene.shape.ArcType.OPEN);
+
+      this.graphicsContext.restore();
+   }
+
+   public void drawShockwave(double x, double y, double currentRadius, double progress) {
+      double pixelX = camera.worldToScreenX(x);
+      double pixelY = camera.worldToScreenY(y);
+      double centerX = pixelX + TILE_SIZE_HALF;
+      double centerY = pixelY + TILE_SIZE_HALF;
+      double pixelRadius = currentRadius;
+      double alpha = Math.max(0.0, 1.0 - progress);
+
+      this.graphicsContext.save();
+
+      // Outer ring
+      this.graphicsContext.setGlobalAlpha(alpha * 0.6);
+      this.graphicsContext.setStroke(Color.MEDIUMPURPLE);
+      this.graphicsContext.setLineWidth(3.0);
+      this.graphicsContext.strokeOval(centerX - pixelRadius, centerY - pixelRadius,
+              pixelRadius * 2, pixelRadius * 2);
+
+      // Inner fill
+      this.graphicsContext.setGlobalAlpha(alpha * 0.15);
+      this.graphicsContext.setFill(Color.MEDIUMPURPLE);
+      this.graphicsContext.fillOval(centerX - pixelRadius, centerY - pixelRadius,
+              pixelRadius * 2, pixelRadius * 2);
+
+      this.graphicsContext.restore();
+   }
+
    public void drawText(String text, double x, double y, Color color, int fontSize) {
       Font originalFont = this.graphicsContext.getFont();
       this.graphicsContext.setFont(Font.font("Courier New", FontWeight.BOLD, fontSize));
