@@ -120,6 +120,7 @@ public class GameController {
    private double bossIncomingTimer;
    private int selectedCharacter;
    private CharacterType chosenCharacter;
+   private boolean weaponsJammed;
 
    public GameController(Stage stage, SoundEffectGenerator soundGenerator) {
       this.stage = stage;
@@ -185,6 +186,7 @@ public class GameController {
       this.activeBoss = null;
       this.bossIncomingTimer = 0.0;
       this.selectedCharacter = 0;
+      this.weaponsJammed = false;
       if (this.settings.isRetroAudio()) {
          this.soundGenerator.startIntroMusic();
       } else {
@@ -223,6 +225,7 @@ public class GameController {
       AnimationTimer gameLoop = new AnimationTimer() {
          public void handle(long currentTime) {
             double deltaTime = (currentTime - GameController.this.lastFrameTime) / 1.0E9;
+            deltaTime = Math.min(deltaTime, 0.1);
             long frameTime = currentTime - GameController.this.lastFrameTime;
             GameController.this.lastFrameTime = currentTime;
             GameController.this.performanceMonitor.update(deltaTime, frameTime);
@@ -324,7 +327,7 @@ public class GameController {
    private void updatePlaying(double deltaTime) {
       this.handlePlayerInput();
       this.player.update(deltaTime);
-      this.constrainPlayerToBounds();
+      this.constrainPlayerToBounds(deltaTime);
       this.camera.follow(this.player.getX(), this.player.getY(), 5.0, deltaTime);
       this.camera.update(deltaTime);
       this.gameView.updateParticles(deltaTime);
@@ -361,8 +364,10 @@ public class GameController {
          this.camera.getViewportWidth(), this.camera.getViewportHeight()
       );
       this.waveManager.update(deltaTime);
-      List<Enemy> newEnemies = this.waveManager.spawnEnemies();
-      this.enemies.addAll(newEnemies);
+      if (this.enemies.size() < 300) {
+         List<Enemy> newEnemies = this.waveManager.spawnEnemies();
+         this.enemies.addAll(newEnemies);
+      }
 
       // Check boss spawn
       BossEnemy newBoss = this.waveManager.checkBossSpawn();
@@ -409,6 +414,12 @@ public class GameController {
                this.gameView.getParticleSystem().createDroneTrail(drone.getX(), drone.getY());
             }
          }
+         if (weapon instanceof com.qvc.survivors.model.weapon.impl.DroneArmada armada) {
+            armada.updateDronePositions(this.player.getX(), this.player.getY());
+            for (Drone drone : armada.getDrones()) {
+               this.gameView.getParticleSystem().createDroneTrail(drone.getX(), drone.getY());
+            }
+         }
          if (weapon.isReady()) {
             List<Projectile> newProjectiles = weapon.fire(
                     this.player.getX(), this.player.getY(),
@@ -425,6 +436,36 @@ public class GameController {
                   this.shockwaves.add(sw);
                   mic.clearShockwave();
                }
+            }
+            // Handle LiveBroadcastShockwave (evolved HostMicrophone)
+            if (weapon instanceof com.qvc.survivors.model.weapon.impl.LiveBroadcastShockwave lbs) {
+               ShockwaveEffect sw = lbs.getActiveShockwave();
+               if (sw != null) {
+                  this.shockwaves.add(sw);
+                  lbs.clearShockwave();
+               }
+            }
+            // Handle QVCPerfumeAura shockwave
+            if (weapon instanceof com.qvc.survivors.model.weapon.impl.QVCPerfumeAura aura) {
+               ShockwaveEffect sw = aura.getActiveAura();
+               if (sw != null) {
+                  this.shockwaves.add(sw);
+                  aura.clearAura();
+               }
+            }
+            // Handle FlashSaleStrike shockwaves
+            if (weapon instanceof com.qvc.survivors.model.weapon.impl.FlashSaleStrike fss) {
+               for (ShockwaveEffect strike : fss.getActiveStrikes()) {
+                  this.shockwaves.add(strike);
+               }
+               fss.clearStrikes();
+            }
+            // Handle SpilledCoffeeZone shockwaves
+            if (weapon instanceof com.qvc.survivors.model.weapon.impl.SpilledCoffeeZone scz) {
+               for (ShockwaveEffect coffeeZone : scz.getActiveZones()) {
+                  this.shockwaves.add(coffeeZone);
+               }
+               scz.clearZones();
             }
          }
       }
@@ -469,6 +510,11 @@ public class GameController {
       this.shockwaves.removeIf(sw -> !sw.isActive());
       this.checkCollisionsWithEffects();
       this.spawnCollectiblesFromDeadEnemies();
+      for (Collectible collectible : this.collectibles) {
+         if (collectible.isActive()) {
+            collectible.update(deltaTime);
+         }
+      }
       this.removeInactiveEntities();
       // Treasure chest pickup
       this.checkTreasureChestPickup();
@@ -533,7 +579,7 @@ public class GameController {
       this.player.getMovementComponent().setDirection(dirX, dirY);
    }
 
-   private void constrainPlayerToBounds() {
+   private void constrainPlayerToBounds(double deltaTime) {
       double px = Math.max(0.0, Math.min(399.0, this.player.getX()));
       double py = Math.max(0.0, Math.min(299.0, this.player.getY()));
       // Wall collision: prevent movement into WALL tiles
@@ -542,8 +588,8 @@ public class GameController {
          int tileY = (int) py;
          if (this.tileMap.getTile(tileX, tileY) == TileType.WALL) {
             // Revert to previous position (snap back)
-            px = Math.max(0.0, Math.min(399.0, this.player.getX() - this.player.getMovementComponent().getVelocityX() * 0.016));
-            py = Math.max(0.0, Math.min(299.0, this.player.getY() - this.player.getMovementComponent().getVelocityY() * 0.016));
+            px = Math.max(0.0, Math.min(399.0, this.player.getX() - this.player.getMovementComponent().getVelocityX() * deltaTime));
+            py = Math.max(0.0, Math.min(299.0, this.player.getY() - this.player.getMovementComponent().getVelocityY() * deltaTime));
          }
       }
       this.player.setX(px);
@@ -670,8 +716,14 @@ public class GameController {
 
       // Drone collisions (from weapon system)
       for (Weapon weapon : this.player.getInventory().getWeapons()) {
+         List<Drone> weaponDrones = null;
          if (weapon instanceof DeliveryDroneSwarm droneSwarm) {
-            for (Drone drone : droneSwarm.getDrones()) {
+            weaponDrones = droneSwarm.getDrones();
+         } else if (weapon instanceof com.qvc.survivors.model.weapon.impl.DroneArmada armada) {
+            weaponDrones = armada.getDrones();
+         }
+         if (weaponDrones != null) {
+            for (Drone drone : weaponDrones) {
                for (Enemy enemy : this.enemies) {
                   if (enemy.isActive() && this.collisionManager.checkCollision(drone, enemy) && drone.canAttack()) {
                      double damage = drone.getDamageComponent().getDamage();
@@ -1359,6 +1411,7 @@ public class GameController {
          this.camera.setEnabled(true);
       } else if (this.gameState == GameState.PLAYING || this.gameState == GameState.LEVEL_UP) {
          this.renderEntities();
+         this.gameView.renderPendingGlows();
          this.damageNumbers.render(this.gameView.getGraphicsContext(), this.camera);
          this.gameView.renderParticles();
          this.hudView.render(this.player, this.waveManager.getCurrentWave(), this.currentZone);
@@ -1422,6 +1475,7 @@ public class GameController {
             this.camera.setEnabled(true);
          } else if (this.gameState == GameState.PLAYING) {
             this.renderEntities();
+            this.gameView.renderPendingGlows();
             this.gameView.renderParticles();
             this.hudView.render(this.player, this.waveManager.getCurrentWave(), this.currentZone);
          }
@@ -1430,6 +1484,7 @@ public class GameController {
       } else {
          if (this.targetState == GameState.PLAYING) {
             this.renderEntities();
+            this.gameView.renderPendingGlows();
             this.gameView.renderParticles();
             this.hudView.render(this.player, this.waveManager.getCurrentWave(), this.currentZone);
          } else if (this.targetState == GameState.CHARACTER_SELECT) {
@@ -1501,8 +1556,14 @@ public class GameController {
 
       // Render drones from weapon system
       for (Weapon weapon : this.player.getInventory().getWeapons()) {
+         List<Drone> renderDrones = null;
          if (weapon instanceof DeliveryDroneSwarm droneSwarm) {
-            for (Drone drone : droneSwarm.getDrones()) {
+            renderDrones = droneSwarm.getDrones();
+         } else if (weapon instanceof com.qvc.survivors.model.weapon.impl.DroneArmada armada) {
+            renderDrones = armada.getDrones();
+         }
+         if (renderDrones != null) {
+            for (Drone drone : renderDrones) {
                if (this.camera.isInView(drone.getX(), drone.getY(), 5)) {
                   double pulseIntensity = 0.5 + 0.5 * Math.sin(this.currentFrameTime * 0.008);
                   this.gameView.drawDrone(drone.getX(), drone.getY(), Color.LIGHTGREEN, 1.0 + pulseIntensity);

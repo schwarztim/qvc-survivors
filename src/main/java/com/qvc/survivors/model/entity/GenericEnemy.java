@@ -48,7 +48,10 @@ public class GenericEnemy extends Enemy {
             spawnTimer += deltaTime;
         }
 
-        behavior.update(this, targetX, targetY, deltaTime);
+        // Skip behavior movement during knockback
+        if (!isKnockedBack()) {
+            behavior.update(this, targetX, targetY, deltaTime);
+        }
     }
 
     @Override
@@ -74,6 +77,9 @@ public class GenericEnemy extends Enemy {
         this.movementComponent.reset(type.getSpeed());
         this.damageComponent.setDamage(type.getDamage());
         this.damageFlashTimer = 0.0;
+        this.knockbackTimer = 0.0;
+        this.knockbackVX = 0.0;
+        this.knockbackVY = 0.0;
         this.behavior = createBehavior(type.getBehaviorId());
         this.behaviorTimer = 0.0;
         this.behaviorState = 0;

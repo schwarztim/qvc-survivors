@@ -11,6 +11,9 @@ public abstract class Enemy extends Entity {
    protected final DamageComponent damageComponent;
    protected final int moneyDrop;
    protected double damageFlashTimer;
+   protected double knockbackTimer;
+   protected double knockbackVX;
+   protected double knockbackVY;
 
    public Enemy(double x, double y, double width, double height, double health, double speed, double damage, int moneyDrop) {
       super(x, y, width, height);
@@ -19,12 +22,22 @@ public abstract class Enemy extends Entity {
       this.damageComponent = new DamageComponent(damage);
       this.moneyDrop = moneyDrop;
       this.damageFlashTimer = 0.0;
+      this.knockbackTimer = 0.0;
+      this.knockbackVX = 0.0;
+      this.knockbackVY = 0.0;
    }
 
    @Override
    public void update(double deltaTime) {
-      this.x = this.x + this.movementComponent.getVelocityX() * deltaTime;
-      this.y = this.y + this.movementComponent.getVelocityY() * deltaTime;
+      if (this.knockbackTimer > 0.0) {
+         // During knockback, use knockback velocity instead of normal movement
+         this.x += this.knockbackVX * deltaTime;
+         this.y += this.knockbackVY * deltaTime;
+         this.knockbackTimer -= deltaTime;
+      } else {
+         this.x += this.movementComponent.getVelocityX() * deltaTime;
+         this.y += this.movementComponent.getVelocityY() * deltaTime;
+      }
       if (this.damageFlashTimer > 0.0) {
          this.damageFlashTimer -= deltaTime;
       }
@@ -49,9 +62,16 @@ public abstract class Enemy extends Entity {
       double dy = this.y - fromY;
       double dist = Math.sqrt(dx * dx + dy * dy);
       if (dist > 0) {
-         this.x += (dx / dist) * force;
-         this.y += (dy / dist) * force;
+         // 120ms knockback reversal with velocity-based push
+         double knockbackSpeed = force * 40.0;
+         this.knockbackVX = (dx / dist) * knockbackSpeed;
+         this.knockbackVY = (dy / dist) * knockbackSpeed;
+         this.knockbackTimer = 0.12;
       }
+   }
+
+   public boolean isKnockedBack() {
+      return this.knockbackTimer > 0.0;
    }
 
    public boolean isDamageFlashing() {
