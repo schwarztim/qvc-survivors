@@ -1,5 +1,6 @@
 package com.qvc.survivors.view;
 
+import com.qvc.survivors.engine.Camera;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.effect.BlendMode;
@@ -23,9 +24,10 @@ public class GameView extends Canvas {
    private RadialGradient[] nebulaGradients;
    private static final double TILE_SIZE_HALF = 7.5;
    private long cachedFrameTime;
+   private Camera camera;
 
-   public GameView(int gridWidth, int gridHeight) {
-      super(gridWidth * 15, gridHeight * 15);
+   public GameView(int gridWidth, int gridHeight, double viewportWidth, double viewportHeight) {
+      super(viewportWidth, viewportHeight);
       this.gridWidth = gridWidth;
       this.gridHeight = gridHeight;
       this.graphicsContext = this.getGraphicsContext2D();
@@ -35,6 +37,15 @@ public class GameView extends Canvas {
       this.graphicsContext.setFont(font);
       this.graphicsContext.setImageSmoothing(false);
       this.initializeNebulaGradients();
+   }
+
+   public void setCamera(Camera camera) {
+      this.camera = camera;
+   }
+
+   public void resizeCanvas(double width, double height) {
+      this.setWidth(width);
+      this.setHeight(height);
    }
 
    private void initializeNebulaGradients() {
@@ -97,16 +108,19 @@ public class GameView extends Canvas {
       this.graphicsContext.save();
       this.graphicsContext.setGlobalBlendMode(BlendMode.ADD);
 
+      double parallaxOffsetX = camera.isEnabled() ? camera.getX() * TILE_SIZE * 0.5 : 0;
+      double parallaxOffsetY = camera.isEnabled() ? camera.getY() * TILE_SIZE * 0.5 : 0;
+
       for (int i = 0; i < 50; i++) {
-         double x = (i * 137.5 + this.animationTime * 2.0) % this.getWidth();
-         double y = (i * 73.3 + this.animationTime * 1.5) % this.getHeight();
+         double x = ((i * 137.5 + this.animationTime * 2.0) - parallaxOffsetX % this.getWidth() + this.getWidth()) % this.getWidth();
+         double y = ((i * 73.3 + this.animationTime * 1.5) - parallaxOffsetY % this.getHeight() + this.getHeight()) % this.getHeight();
          double brightness = 0.3 + 0.2 * Math.sin(this.animationTime * 3.0 + i);
          this.graphicsContext.setFill(Color.rgb(50, 100, 150, brightness * 0.3));
          this.graphicsContext.fillOval(x - 1.0, y - 1.0, 2.0, 2.0);
       }
 
       for (int i = 0; i < 3; i++) {
-         double centerX = (i * 300 + this.animationTime * 10.0) % this.getWidth();
+         double centerX = ((i * 300 + this.animationTime * 10.0) - parallaxOffsetX % this.getWidth() + this.getWidth()) % this.getWidth();
          double centerY = this.getHeight() / 3.0 * (i + 1);
          this.graphicsContext.setFill(this.nebulaGradients[i]);
          this.graphicsContext.fillOval(centerX - 150.0, centerY - 150.0, 300.0, 300.0);
@@ -119,13 +133,18 @@ public class GameView extends Canvas {
       this.graphicsContext.setStroke(GRID_COLOR);
       this.graphicsContext.setLineWidth(0.5);
 
-      for (int i = 0; i <= this.gridWidth; i++) {
-         double x = i * 15;
+      int firstVisibleCol = Math.max(0, (int) Math.floor(camera.screenToWorldX(0)));
+      int lastVisibleCol = Math.min(this.gridWidth, (int) Math.ceil(camera.screenToWorldX(this.getWidth())) + 1);
+      int firstVisibleRow = Math.max(0, (int) Math.floor(camera.screenToWorldY(0)));
+      int lastVisibleRow = Math.min(this.gridHeight, (int) Math.ceil(camera.screenToWorldY(this.getHeight())) + 1);
+
+      for (int i = firstVisibleCol; i <= lastVisibleCol; i++) {
+         double x = camera.worldToScreenX(i);
          this.graphicsContext.strokeLine(x, 0.0, x, this.getHeight());
       }
 
-      for (int i = 0; i <= this.gridHeight; i++) {
-         double y = i * 15;
+      for (int i = firstVisibleRow; i <= lastVisibleRow; i++) {
+         double y = camera.worldToScreenY(i);
          this.graphicsContext.strokeLine(0.0, y, this.getWidth(), y);
       }
    }
@@ -141,8 +160,8 @@ public class GameView extends Canvas {
    }
 
    public void drawPackage(double x, double y, Color color, double glowIntensity) {
-      double pixelX = x * 15.0;
-      double pixelY = y * 15.0;
+      double pixelX = camera.worldToScreenX(x);
+      double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + 7.5;
       double centerY = pixelY + 7.5;
       double boxSize = 12.0;
@@ -170,8 +189,8 @@ public class GameView extends Canvas {
    }
 
    public void drawPlayer(double x, double y, Color color, double glowIntensity) {
-      double pixelX = x * 15.0;
-      double pixelY = y * 15.0;
+      double pixelX = camera.worldToScreenX(x);
+      double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + 7.5;
       double centerY = pixelY + 7.5;
       this.graphicsContext.save();
@@ -217,8 +236,8 @@ public class GameView extends Canvas {
    }
 
    public void drawEnemy(double x, double y, Color color, double glowIntensity, boolean isVIP) {
-      double pixelX = x * 15.0;
-      double pixelY = y * 15.0;
+      double pixelX = camera.worldToScreenX(x);
+      double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + 7.5;
       double centerY = pixelY + 7.5;
       this.graphicsContext.save();
@@ -291,8 +310,8 @@ public class GameView extends Canvas {
    }
 
    public void drawDrone(double x, double y, Color color, double glowIntensity) {
-      double pixelX = x * 15.0;
-      double pixelY = y * 15.0;
+      double pixelX = camera.worldToScreenX(x);
+      double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + 7.5;
       double centerY = pixelY + 7.5;
       this.graphicsContext.save();
@@ -350,8 +369,8 @@ public class GameView extends Canvas {
    }
 
    public void drawCollectible(double x, double y, Color color, double glowIntensity, boolean isHealthPack, boolean isPremium) {
-      double pixelX = x * 15.0;
-      double pixelY = y * 15.0;
+      double pixelX = camera.worldToScreenX(x);
+      double pixelY = camera.worldToScreenY(y);
       double centerX = pixelX + 7.5;
       double centerY = pixelY + 7.5;
       this.graphicsContext.save();
@@ -456,7 +475,7 @@ public class GameView extends Canvas {
    }
 
    public void renderParticles() {
-      this.particleSystem.render(this.graphicsContext, 15.0);
+      this.particleSystem.render(this.graphicsContext, this.camera);
    }
 
    public int getTileSize() {
@@ -496,5 +515,9 @@ public class GameView extends Canvas {
    @Generated
    public long getCachedFrameTime() {
       return this.cachedFrameTime;
+   }
+
+   public Camera getCamera() {
+      return this.camera;
    }
 }

@@ -1,5 +1,6 @@
 package com.qvc.survivors.view;
 
+import com.qvc.survivors.engine.Camera;
 import com.qvc.survivors.util.ObjectPool;
 import java.util.ArrayList;
 import java.util.List;
@@ -138,7 +139,7 @@ public class ParticleSystem {
       }
    }
 
-   public void render(GraphicsContext gc, double tileSize) {
+   public void render(GraphicsContext gc, Camera camera) {
       gc.save();
       gc.setGlobalBlendMode(BlendMode.ADD);
 
@@ -148,8 +149,8 @@ public class ParticleSystem {
             Color renderColor = Color.rgb(
                (int)(particle.getColor().getRed() * 255.0), (int)(particle.getColor().getGreen() * 255.0), (int)(particle.getColor().getBlue() * 255.0), alpha
             );
-            double screenX = particle.getX() * tileSize;
-            double screenY = particle.getY() * tileSize;
+            double screenX = camera.worldToScreenX(particle.getX());
+            double screenY = camera.worldToScreenY(particle.getY());
             double size = particle.getSize();
             gc.setFill(renderColor);
             switch (particle.getType()) {

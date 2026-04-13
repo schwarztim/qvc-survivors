@@ -10,6 +10,7 @@ public class WaveManager {
    private static final Random RANDOM = new Random();
    private static final double BASE_SPAWN_INTERVAL = 2.0;
    private static final double WAVE_DURATION = 30.0;
+   private static final double TILE_SIZE = 15.0;
    private final double fieldWidth;
    private final double fieldHeight;
    private final EntityPoolManager entityPoolManager;
@@ -17,6 +18,10 @@ public class WaveManager {
    private double waveTimer;
    private double spawnTimer;
    private double spawnInterval;
+   private double camX;
+   private double camY;
+   private double camViewW;
+   private double camViewH;
 
    public WaveManager(double fieldWidth, double fieldHeight, EntityPoolManager entityPoolManager) {
       this.fieldWidth = fieldWidth;
@@ -26,6 +31,17 @@ public class WaveManager {
       this.waveTimer = 0.0;
       this.spawnTimer = 0.0;
       this.spawnInterval = 2.0;
+      this.camX = fieldWidth / 2.0;
+      this.camY = fieldHeight / 2.0;
+      this.camViewW = 1200;
+      this.camViewH = 750;
+   }
+
+   public void setCameraPosition(double camX, double camY, double viewW, double viewH) {
+      this.camX = camX;
+      this.camY = camY;
+      this.camViewW = viewW;
+      this.camViewH = viewH;
    }
 
    public void reset() {
@@ -69,13 +85,34 @@ public class WaveManager {
       record SpawnPosition(double x, double y) {
       }
 
+      double halfViewW = (this.camViewW / TILE_SIZE) / 2.0 + 5;
+      double halfViewH = (this.camViewH / TILE_SIZE) / 2.0 + 5;
 
-      SpawnPosition position = switch (side) {
-         case 0 -> new SpawnPosition(RANDOM.nextDouble() * this.fieldWidth, -5.0);
-         case 1 -> new SpawnPosition(this.fieldWidth + 5.0, RANDOM.nextDouble() * this.fieldHeight);
-         case 2 -> new SpawnPosition(RANDOM.nextDouble() * this.fieldWidth, this.fieldHeight + 5.0);
-         default -> new SpawnPosition(-5.0, RANDOM.nextDouble() * this.fieldHeight);
-      };
+      double spawnX;
+      double spawnY;
+      switch (side) {
+         case 0: // top
+            spawnX = this.camX + (RANDOM.nextDouble() * 2.0 - 1.0) * halfViewW;
+            spawnY = this.camY - halfViewH;
+            break;
+         case 1: // right
+            spawnX = this.camX + halfViewW;
+            spawnY = this.camY + (RANDOM.nextDouble() * 2.0 - 1.0) * halfViewH;
+            break;
+         case 2: // bottom
+            spawnX = this.camX + (RANDOM.nextDouble() * 2.0 - 1.0) * halfViewW;
+            spawnY = this.camY + halfViewH;
+            break;
+         default: // left
+            spawnX = this.camX - halfViewW;
+            spawnY = this.camY + (RANDOM.nextDouble() * 2.0 - 1.0) * halfViewH;
+            break;
+      }
+
+      spawnX = Math.max(0, Math.min(this.fieldWidth, spawnX));
+      spawnY = Math.max(0, Math.min(this.fieldHeight, spawnY));
+
+      SpawnPosition position = new SpawnPosition(spawnX, spawnY);
       double vipChance = 0.15 + this.currentWave * 0.02;
       boolean isVIP = RANDOM.nextDouble() < vipChance;
       return (Enemy)(isVIP

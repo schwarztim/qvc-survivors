@@ -1,5 +1,6 @@
 package com.qvc.survivors.controller;
 
+import com.qvc.survivors.engine.Camera;
 import com.qvc.survivors.model.GameState;
 import com.qvc.survivors.model.entity.Collectible;
 import com.qvc.survivors.model.entity.Drone;
@@ -41,9 +42,12 @@ import org.slf4j.LoggerFactory;
 public class GameController {
    @Generated
    private static final Logger log = LoggerFactory.getLogger(GameController.class);
-   private static final int GRID_WIDTH = 80;
-   private static final int GRID_HEIGHT = 50;
+   private static final int GRID_WIDTH = 400;
+   private static final int GRID_HEIGHT = 300;
+   private static final double VIEWPORT_WIDTH = 1200;
+   private static final double VIEWPORT_HEIGHT = 750;
    private final Stage stage;
+   private final Camera camera;
    private final GameView gameView;
    private final HUDView hudView;
    private final LevelUpView levelUpView;
@@ -78,7 +82,9 @@ public class GameController {
 
    public GameController(Stage stage, SoundEffectGenerator soundGenerator) {
       this.stage = stage;
-      this.gameView = new GameView(80, 50);
+      this.camera = new Camera(200.0, 150.0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+      this.gameView = new GameView(GRID_WIDTH, GRID_HEIGHT, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+      this.gameView.setCamera(this.camera);
       this.hudView = new HUDView(this.gameView);
       this.levelUpView = new LevelUpView(this.gameView);
       this.preloaderView = new PreloaderView(this.gameView);
@@ -87,8 +93,8 @@ public class GameController {
       this.performanceMonitor = new PerformanceMonitor();
       this.inputHandler = new InputHandler();
       this.entityPoolManager = new EntityPoolManager();
-      this.waveManager = new WaveManager(80.0, 50.0, this.entityPoolManager);
-      this.collisionManager = new CollisionManager(80, 50);
+      this.waveManager = new WaveManager(400.0, 300.0, this.entityPoolManager);
+      this.collisionManager = new CollisionManager(400, 300);
       this.upgradeManager = new UpgradeManager();
       this.soundGenerator = soundGenerator;
       this.metaProgressionManager = new MetaProgressionManager();
@@ -101,7 +107,7 @@ public class GameController {
    }
 
    private void initializeGame() {
-      this.player = new Player(40.0, 25.0, this.metaProgressionManager.getMetaProgression());
+      this.player = new Player(200.0, 150.0, this.metaProgressionManager.getMetaProgression());
       this.enemies = new ArrayList<>();
       this.projectiles = new ArrayList<>();
       this.collectibles = new ArrayList<>();
@@ -117,12 +123,25 @@ public class GameController {
 
    private void setupScene() {
       StackPane root = new StackPane(new Node[]{this.gameView});
-      Scene scene = new Scene(root);
+      Scene scene = new Scene(root, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
       scene.setOnKeyPressed(event -> this.inputHandler.handleKeyPressed(event.getCode()));
       scene.setOnKeyReleased(event -> this.inputHandler.handleKeyReleased(event.getCode()));
       this.stage.setScene(scene);
       this.stage.setTitle("QVC Survivors");
-      this.stage.setResizable(false);
+      this.stage.setMinWidth(800);
+      this.stage.setMinHeight(600);
+      scene.widthProperty().addListener((obs, oldVal, newVal) -> {
+         double w = newVal.doubleValue();
+         double h = scene.getHeight();
+         this.camera.setViewportSize(w, h);
+         this.gameView.resizeCanvas(w, h);
+      });
+      scene.heightProperty().addListener((obs, oldVal, newVal) -> {
+         double w = scene.getWidth();
+         double h = newVal.doubleValue();
+         this.camera.setViewportSize(w, h);
+         this.gameView.resizeCanvas(w, h);
+      });
       this.stage.show();
       this.startGameLoop();
    }
@@ -208,7 +227,13 @@ public class GameController {
       this.handlePlayerInput();
       this.player.update(deltaTime);
       this.constrainPlayerToBounds();
+      this.camera.follow(this.player.getX(), this.player.getY(), 5.0, deltaTime);
+      this.camera.update(deltaTime);
       this.gameView.updateParticles(deltaTime);
+      this.waveManager.setCameraPosition(
+         this.camera.getX(), this.camera.getY(),
+         this.camera.getViewportWidth(), this.camera.getViewportHeight()
+      );
       this.waveManager.update(deltaTime);
       List<Enemy> newEnemies = this.waveManager.spawnEnemies();
       this.enemies.addAll(newEnemies);
@@ -232,7 +257,7 @@ public class GameController {
       for (Projectile projectile : this.projectiles) {
          if (projectile.isActive()) {
             projectile.update(deltaTime);
-            if (projectile.isOutOfBounds(80.0, 50.0)) {
+            if (projectile.isOutOfBounds(400.0, 300.0)) {
                projectile.setActive(false);
             }
 
@@ -291,8 +316,8 @@ public class GameController {
    }
 
    private void constrainPlayerToBounds() {
-      this.player.setX(Math.max(0.0, Math.min(79.0, this.player.getX())));
-      this.player.setY(Math.max(0.0, Math.min(49.0, this.player.getY())));
+      this.player.setX(Math.max(0.0, Math.min(399.0, this.player.getX())));
+      this.player.setY(Math.max(0.0, Math.min(299.0, this.player.getY())));
    }
 
    private boolean fireProjectiles() {
@@ -598,6 +623,7 @@ public class GameController {
       this.soundGenerator.stopMetaShopMusic();
       this.preloaderAnimationTime = 0.0;
       this.initializeGame();
+      this.camera.follow(200.0, 150.0, 1000.0, 1.0);
       this.waveManager.reset();
    }
 
@@ -615,7 +641,9 @@ public class GameController {
 
    private void renderCurrentState() {
       if (this.gameState == GameState.PRELOADER) {
+         this.camera.setEnabled(false);
          this.preloaderView.render(this.preloaderAnimationTime);
+         this.camera.setEnabled(true);
       } else if (this.gameState == GameState.PLAYING || this.gameState == GameState.LEVEL_UP) {
          this.renderEntities();
          this.gameView.renderParticles();
@@ -623,7 +651,9 @@ public class GameController {
       }
 
       if (this.gameState == GameState.TUTORIAL) {
+         this.camera.setEnabled(false);
          this.tutorialView.render();
+         this.camera.setEnabled(true);
       } else if (this.gameState == GameState.LEVEL_UP) {
          this.levelUpView.render(this.currentUpgradeOptions);
       } else if (this.gameState == GameState.GAME_OVER) {
@@ -640,7 +670,9 @@ public class GameController {
       double fadeInProgress = Math.max(0.0, (this.transitionProgress - 0.5) * 2.0);
       if (fadeOutProgress < 1.0) {
          if (this.gameState == GameState.TUTORIAL) {
+            this.camera.setEnabled(false);
             this.tutorialView.render();
+            this.camera.setEnabled(true);
          } else if (this.gameState == GameState.PLAYING) {
             this.renderEntities();
             this.gameView.renderParticles();
@@ -661,7 +693,7 @@ public class GameController {
 
    private void renderEntities() {
       for (Collectible collectible : this.collectibles) {
-         if (collectible.isActive()) {
+         if (collectible.isActive() && this.camera.isInView(collectible.getX(), collectible.getY(), 5)) {
             boolean isHealthPack = collectible.isHealthPack();
             boolean isPremium = false;
             Color itemColor;
@@ -678,18 +710,20 @@ public class GameController {
       }
 
       for (Projectile projectile : this.projectiles) {
-         if (projectile.isActive()) {
+         if (projectile.isActive() && this.camera.isInView(projectile.getX(), projectile.getY(), 5)) {
             this.gameView.drawPackage(projectile.getX(), projectile.getY(), Color.LIGHTBLUE, 0.8);
          }
       }
 
       for (Drone drone : this.drones) {
-         double pulseIntensity = 0.5 + 0.5 * Math.sin(this.currentFrameTime * 0.008);
-         this.gameView.drawDrone(drone.getX(), drone.getY(), Color.LIGHTGREEN, 1.0 + pulseIntensity);
+         if (this.camera.isInView(drone.getX(), drone.getY(), 5)) {
+            double pulseIntensity = 0.5 + 0.5 * Math.sin(this.currentFrameTime * 0.008);
+            this.gameView.drawDrone(drone.getX(), drone.getY(), Color.LIGHTGREEN, 1.0 + pulseIntensity);
+         }
       }
 
       for (Enemy enemy : this.enemies) {
-         if (enemy.isActive()) {
+         if (enemy.isActive() && this.camera.isInView(enemy.getX(), enemy.getY(), 5)) {
             Color enemyColor;
             if (enemy.isDamageFlashing()) {
                enemyColor = Color.WHITE;
