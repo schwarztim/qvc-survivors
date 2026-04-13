@@ -1,0 +1,250 @@
+package com.qvc.survivors.model.entity;
+
+import com.qvc.survivors.model.component.HealthComponent;
+import com.qvc.survivors.model.component.MovementComponent;
+import com.qvc.survivors.model.meta.MetaProgression;
+import com.qvc.survivors.model.meta.MetaUpgradeType;
+import com.qvc.survivors.model.upgrade.PlayerStats;
+import com.qvc.survivors.model.upgrade.StatModifier;
+import lombok.Generated;
+
+public class Player extends Entity {
+   private static final double PLAYER_SIZE = 1.0;
+   private static final double PLAYER_SPEED = 35.0;
+   private final HealthComponent healthComponent;
+   private final MovementComponent movementComponent;
+   private final PlayerStats stats = new PlayerStats();
+   private final double xpMultiplier;
+   private int level;
+   private double experience;
+   private double experienceThreshold;
+   private int money;
+   private int customersSatisfied;
+   private double damageFlashTimer;
+   private double survivalTime;
+   private double fireTimer;
+   private double invulnerabilityTimer;
+
+   public Player(double x, double y) {
+      this(x, y, null);
+   }
+
+   public Player(double x, double y, MetaProgression metaProgression) {
+      super(x, y, 1.0, 1.0);
+      this.xpMultiplier = 1.0 + (metaProgression != null ? metaProgression.getUpgradeValue(MetaUpgradeType.XP_MULTIPLIER) / 100.0 : 0.0);
+      this.applyMetaUpgrades(metaProgression);
+      this.healthComponent = new HealthComponent(this.stats.getStat(StatModifier.MAX_HEALTH));
+      this.movementComponent = new MovementComponent(35.0 + this.getMetaSpeedBonus(metaProgression));
+      this.level = 1;
+      this.experience = 0.0;
+      this.experienceThreshold = 10.0;
+      this.money = 0;
+      this.customersSatisfied = 0;
+      this.survivalTime = 0.0;
+      this.fireTimer = 0.0;
+      this.invulnerabilityTimer = 0.0;
+      this.damageFlashTimer = 0.0;
+   }
+
+   private void applyMetaUpgrades(MetaProgression metaProgression) {
+      if (metaProgression != null) {
+         double healthBonus = metaProgression.getUpgradeValue(MetaUpgradeType.STARTING_HEALTH);
+         this.stats.getStats().put(StatModifier.MAX_HEALTH, this.stats.getStat(StatModifier.MAX_HEALTH) + healthBonus);
+         double damageBonus = metaProgression.getUpgradeValue(MetaUpgradeType.STARTING_DAMAGE);
+         this.stats.getStats().put(StatModifier.PACKAGE_DAMAGE, this.stats.getStat(StatModifier.PACKAGE_DAMAGE) + damageBonus / 100.0);
+         double fireRateBonus = metaProgression.getUpgradeValue(MetaUpgradeType.STARTING_FIRE_RATE);
+         this.stats.getStats().put(StatModifier.FIRE_RATE, this.stats.getStat(StatModifier.FIRE_RATE) + fireRateBonus / 100.0);
+         double pickupRangeBonus = metaProgression.getUpgradeValue(MetaUpgradeType.STARTING_PICKUP_RANGE);
+         this.stats.getStats().put(StatModifier.PICKUP_RANGE, this.stats.getStat(StatModifier.PICKUP_RANGE) + pickupRangeBonus);
+         double critBonus = metaProgression.getUpgradeValue(MetaUpgradeType.STARTING_CRIT_CHANCE);
+         this.stats.getStats().put(StatModifier.CRITICAL_CHANCE, this.stats.getStat(StatModifier.CRITICAL_CHANCE) + critBonus / 100.0);
+         double velocityBonus = metaProgression.getUpgradeValue(MetaUpgradeType.PACKAGE_VELOCITY);
+         this.stats.getStats().put(StatModifier.PACKAGE_VELOCITY, this.stats.getStat(StatModifier.PACKAGE_VELOCITY) + velocityBonus);
+      }
+   }
+
+   private double getMetaSpeedBonus(MetaProgression metaProgression) {
+      return metaProgression == null ? 0.0 : metaProgression.getUpgradeValue(MetaUpgradeType.STARTING_SPEED);
+   }
+
+   @Override
+   public void update(double deltaTime) {
+      this.x = this.x + this.movementComponent.getVelocityX() * deltaTime;
+      this.y = this.y + this.movementComponent.getVelocityY() * deltaTime;
+      this.survivalTime += deltaTime;
+      this.fireTimer += deltaTime;
+      if (this.invulnerabilityTimer > 0.0) {
+         this.invulnerabilityTimer -= deltaTime;
+      }
+
+      if (this.damageFlashTimer > 0.0) {
+         this.damageFlashTimer -= deltaTime;
+      }
+   }
+
+   public void addExperience(double amount) {
+      double adjustedAmount = amount * this.xpMultiplier;
+      this.experience += adjustedAmount;
+      this.money += (int)adjustedAmount;
+   }
+
+   public boolean canLevelUp() {
+      return this.experience >= this.experienceThreshold;
+   }
+
+   public void levelUp() {
+      this.level++;
+      this.experience = this.experience - this.experienceThreshold;
+      this.experienceThreshold = this.calculateNextThreshold();
+   }
+
+   private double calculateNextThreshold() {
+      return 10 + (this.level - 1) * 15 + Math.pow(this.level - 1, 1.5) * 5.0;
+   }
+
+   public void takeDamage(double damage) {
+      if (!(this.invulnerabilityTimer > 0.0)) {
+         this.healthComponent.damage(damage);
+         this.damageFlashTimer = 0.2;
+         if (!this.healthComponent.isAlive()) {
+            this.active = false;
+         }
+      }
+   }
+
+   public boolean canFire() {
+      double fireRate = this.stats.getStat(StatModifier.FIRE_RATE);
+      double fireInterval = 1.0 / fireRate;
+      return this.fireTimer >= fireInterval;
+   }
+
+   public void resetFireTimer() {
+      this.fireTimer = 0.0;
+   }
+
+   public void incrementCustomersSatisfied() {
+      this.customersSatisfied++;
+   }
+
+   public void activateInvulnerability(double duration) {
+      this.invulnerabilityTimer = duration;
+   }
+
+   public boolean isInvulnerable() {
+      return this.invulnerabilityTimer > 0.0;
+   }
+
+   public boolean isDamageFlashing() {
+      return this.damageFlashTimer > 0.0;
+   }
+
+   @Generated
+   public HealthComponent getHealthComponent() {
+      return this.healthComponent;
+   }
+
+   @Generated
+   public MovementComponent getMovementComponent() {
+      return this.movementComponent;
+   }
+
+   @Generated
+   public PlayerStats getStats() {
+      return this.stats;
+   }
+
+   @Generated
+   public double getXpMultiplier() {
+      return this.xpMultiplier;
+   }
+
+   @Generated
+   public int getLevel() {
+      return this.level;
+   }
+
+   @Generated
+   public double getExperience() {
+      return this.experience;
+   }
+
+   @Generated
+   public double getExperienceThreshold() {
+      return this.experienceThreshold;
+   }
+
+   @Generated
+   public int getMoney() {
+      return this.money;
+   }
+
+   @Generated
+   public int getCustomersSatisfied() {
+      return this.customersSatisfied;
+   }
+
+   @Generated
+   public double getDamageFlashTimer() {
+      return this.damageFlashTimer;
+   }
+
+   @Generated
+   public double getSurvivalTime() {
+      return this.survivalTime;
+   }
+
+   @Generated
+   public double getFireTimer() {
+      return this.fireTimer;
+   }
+
+   @Generated
+   public double getInvulnerabilityTimer() {
+      return this.invulnerabilityTimer;
+   }
+
+   @Generated
+   public void setLevel(int level) {
+      this.level = level;
+   }
+
+   @Generated
+   public void setExperience(double experience) {
+      this.experience = experience;
+   }
+
+   @Generated
+   public void setExperienceThreshold(double experienceThreshold) {
+      this.experienceThreshold = experienceThreshold;
+   }
+
+   @Generated
+   public void setMoney(int money) {
+      this.money = money;
+   }
+
+   @Generated
+   public void setCustomersSatisfied(int customersSatisfied) {
+      this.customersSatisfied = customersSatisfied;
+   }
+
+   @Generated
+   public void setDamageFlashTimer(double damageFlashTimer) {
+      this.damageFlashTimer = damageFlashTimer;
+   }
+
+   @Generated
+   public void setSurvivalTime(double survivalTime) {
+      this.survivalTime = survivalTime;
+   }
+
+   @Generated
+   public void setFireTimer(double fireTimer) {
+      this.fireTimer = fireTimer;
+   }
+
+   @Generated
+   public void setInvulnerabilityTimer(double invulnerabilityTimer) {
+      this.invulnerabilityTimer = invulnerabilityTimer;
+   }
+}

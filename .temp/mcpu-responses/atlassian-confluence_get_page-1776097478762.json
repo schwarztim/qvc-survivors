@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "id": "109480290",
+    "title": "QVC Group Business Capability Model",
+    "type": "page",
+    "created": "",
+    "updated": "",
+    "url": "https://qurate.atlassian.net/wiki/spaces/EA/pages/109480290",
+    "space": {
+      "key": "EA",
+      "name": "Enterprise Architecture"
+    },
+    "version": 54,
+    "attachments": [
+      {
+        "id": "att649265154",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250411-224949.png",
+        "media_type": "image/png",
+        "file_size": 22743,
+        "download_url": "/download/attachments/109480290/image-20250411-224949.png?version=1&modificationDate=1744411790981&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att648937985",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250411-221506.png",
+        "media_type": "image/png",
+        "file_size": 191261,
+        "download_url": "/download/attachments/109480290/image-20250411-221506.png?version=1&modificationDate=1744409708421&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att480512017",
+        "type": "attachment",
+        "status": "current",
+        "title": "Global Business Capability Model Release 9.3.drawio.png",
+        "media_type": "image/png",
+        "file_size": 283771,
+        "download_url": "/download/attachments/109480290/Global%20Business%20Capability%20Model%20Release%209.3.drawio.png?version=1&modificationDate=1726520634214&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att480741261",
+        "type": "attachment",
+        "status": "current",
+        "title": "Global Business Capability Model Release 9.3.drawio",
+        "media_type": "application/vnd.jgraph.mxfile",
+        "file_size": 2928408,
+        "download_url": "/download/attachments/109480290/Global%20Business%20Capability%20Model%20Release%209.3.drawio?version=1&modificationDate=1726520632769&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att413139050",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20240611-225212.png",
+        "media_type": "image/png",
+        "file_size": 201003,
+        "download_url": "/download/attachments/109480290/image-20240611-225212.png?version=1&modificationDate=1718146334830&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att337379421",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20240216-220937.png",
+        "media_type": "image/png",
+        "file_size": 30007,
+        "download_url": "/download/attachments/109480290/image-20240216-220937.png?version=1&modificationDate=1708121423463&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att337346629",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20240216-220947.png",
+        "media_type": "image/png",
+        "file_size": 30007,
+        "download_url": "/download/attachments/109480290/image-20240216-220947.png?version=1&modificationDate=1708121422252&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att337313891",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20240216-221001.png",
+        "media_type": "image/png",
+        "file_size": 30007,
+        "download_url": "/download/attachments/109480290/image-20240216-221001.png?version=1&modificationDate=1708121420924&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att109492652",
+        "type": "attachment",
+        "status": "current",
+        "title": "Model Journey.png",
+        "media_type": "image/png",
+        "file_size": 31037,
+        "download_url": "/download/attachments/109480290/Model%20Journey.png?version=7&modificationDate=1631801884413&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att109492642",
+        "type": "attachment",
+        "status": "current",
+        "title": "Model Journey",
+        "media_type": "application/gliffy+json",
+        "file_size": 20293,
+        "download_url": "/download/attachments/109480290/Model%20Journey?version=7&modificationDate=1631801883150&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att109492636",
+        "type": "attachment",
+        "status": "current",
+        "title": "image2021-6-21_11-41-24.png",
+        "media_type": "image/png",
+        "file_size": 362093,
+        "download_url": "/download/attachments/109480290/image2021-6-21_11-41-24.png?version=1&modificationDate=1624275684930&cacheVersion=1&api=v2"
+      }
+    ],
+    "content": {
+      "value": "Since 2003, we have continued to evolve a business architecture model that represents a view of the core capabilities that are critical to business success. As our markets and brands have come together over the years, this model has stood the test of time and showed how similar all of the QVC Group brands and markets are in our core processes. This page highlights the latest version of the model and paves the way for the next evolution of the model, which will be automated through our application portfolio documentation in the ServiceNow platform. Version 9.3 links remain available while version 9.4 is undergoing validation. **Note: We felt it was important to publish in early Q2 2025 to aid our teams in navigating changes brought about by our WIN Strategy.**\n\nNote that while this is a published version, some content, like the QVCGisms and Company & Market List, are regularly updated and have last update dates embedded.\n\n![image-20250411-221506.png](https://qurate.atlassian.net/wiki/download/attachments/109480290/image-20250411-221506.png?version=1&modificationDate=1744409708421&cacheVersion=1&api=v2)\n\n|  |\n| --- |\n| **A Message from the Capability Model Virtual Team** |\n| A team of fantastic experts continues to support this model and to be sure that each market  and brand is properly described in the model. |\n\nHave a question specific to your market or brand? Please reach out to ...\n\nUK: @Susan Dunn\n\nDE: @Tobias Roether & @Marcel Raus\n\nUS: @Lawrence Krebs\n\nHSN: @Jen Hissrich\n\nItaly: @Arman Seraji\n\nCBI: @Justin Garabedian\n\nEditor: @Stephanie Kowchak (Deactivated)\n\nTeam Lead: @Laura Becker\n\nWant to volunteer to cover a market or brand, or join us to build the next evolution?\n\nContact @Laura Becker\n\nThe core components of the capability model are interconnected, the visual here serves as a guide on your journey to leverage this model:\n\n![image-20250411-224949.png](https://qurate.atlassian.net/wiki/download/attachments/109480290/image-20250411-224949.png?version=1&modificationDate=1744411790981&cacheVersion=1&api=v2)\n\n### Details & Links for Core Model Components\n\nNearly all of the links below will open a copy to your Downloads folder. You can go also go to the SharePoint folder holding the model, that link is [QVC Group Business Capability Model 9.4 - All Documents](https://sharepoint.qvcdev.qvc.net/Teams/EAC/Shared%20Documents/Forms/AllItems.aspx?RootFolder=%2FTeams%2FEAC%2FShared%20Documents%2FBusiness%20Capability%20Model%2FQVC%20Group%20Business%20Capability%20Model%209%2E4&FolderCTID=0x01200017F48F0FD09E4849BC209BC733D16A34&View=%7B9B24B92E%2D4732%2D42CA%2D9230%2DA4E1F6E945BE%7D#InplviewHash9b24b92e-4732-42ca-9230-a4e1f6e945be=FolderCTID%3D0x01200017F48F0FD09E4849BC209BC733D16A34-SortField%3DModified-SortDir%3DDesc).\n\n[QVC Group Company and Market List](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2964) is where your journey begins, with an understanding of the QVC Group brands, QVC International markets, and the executive leadership. While part of the published model, this list will be kept updated as changes are made internally available. Version 9.3 link: [Company and Market List](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2767)\n\n[QVCGisms](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2962) is next up, please bookmark this list in your favorite browser! QVC Group, and the Technology team in particular, loves acronyms. We try to capture as many acronyms and common business terms as possible, and also commit to keeping this list updated as we learn about new terms. The list is also filterable with a target audience, including the 125 terms new business executives should know. You can also look up these same acronyms in our internal AI tool, [ChatQVCG](https://chat.qvcg.ai/). Version 9.3 link: [QRGisms](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2766)\n\nThe core of these resources is the [Visual Capability Model](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2959). If you don’t have Visio installed, try the [PDF Visual Capability Model](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2967). Version 9.3 links: [Visual Capability Model](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2769) & [PDF Visual Model](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2771).\n\nThe core of this visual model represents the five main components of our business:\n\n* Product (Merchandise) strategy and lifecycle: We curate a collection of products that our customers love (1.0 & 2.0)\n* Multi-channel Sales strategy and flow: Wherever the customer wants to shop, we bring her a great experience (3.0 & 4.0)\n* Order strategy, support & flow. From capturing orders to shipping them & accepting returns, plus all the supporting capabilities (5.0 & 6.0)\n* Financials: from Accounting to Controls to International Funds, all our standard practices (7.0)\n* Business Support: A foundation including Technology, Legal, Human Resources and Information Management (8.0)\n\nWith the base model established in the first dozen pages, including a 'cheat sheet' that explains all the boxes (page 4), this model also includes a high level view of the primary systems providing these capabilities in each market and brand. You'll then find a draft of a magic quadrant identifying which capabilities are differentiators and which are standard practices. Next up is a business continuity heat map, followed by a page for each market and brand, giving a high level view of the systems that support the capabilities in the model. Finally there are two draft pages sharing a view of what emerging markets would need.\n\nThere is also a great visual for the Value Streams available to understand the four levels of the model and see both the business and shared services value stream portfolios [Value Streams Visual 2025](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2958). Grab a copy of this deck and you can change the colors or use outlines for the boxes to heat map the impact of an initiative or highlight where new capabilities are needed.A cross reference for the original 2018, the 2023 and the 2025 models, in Excel, can be found at [Value Stream Xref 2025](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2961). Note that key leaders and architects are maintained in the Excel cross reference; you can use that information to then go to Workday to find members of those teams. Original 2023 links: [VSOM 2023](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2918) & [VSOM Xref](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2917).\n\nWant to go deeper into the details of the model or explore a particular capability's systems across all brands and markets? The [Systems Cross Reference](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2960) is an Excel based version of the model details and includes (far right) a description of the capabilities at a finer grain than the visual model. There's also a cross reference to the VSOM taxonomy at three of the four levels. Also, the names in this cross reference have been manually matched to the names in the ServiceNow CMDB [Application List](https://qvcprod.service-now.com/now/nav/ui/classic/params/target/csdm_app_services_list.do%3Fsysparm_query%3Dsys_class_nameINSTANCEOFcmdb_ci_service_auto%5Eservice_classification%3DApplication%2520Service%26sysparm_view%3Dcsdm_view), which has far more applications than the primary ones listed in this cross reference, but it is possible that names have changed in ServiceNow. Version 9.3 link: [Systems Cross Reference](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2768).\n\nThe [Blank Model (Heat Map) Template](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2963) is a convenient version of the main model page that is useful in impact analysis. If you are going after a large business outcome that has a broad impact across the retail model, choose a color to fill in the impacted areas. You can also leverage the [Systems Cross Reference](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2960) by grabbing a copy, adding an impact column, and using it to ensure that you've covered all the bases in your impact analysis.\n\n### Additional Model Components\n\nDepending on your role, you may find the following model components useful.\n\n[QA Heat Map](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2968) was built to assist our Quality Engineering / Quality Assurance team members with prioritizing testing when resources are limited. This heat map can also help with prioritizing areas for automation via Quality Engineering, and for Business Continuity Planning. This is also available in PDF form [QA Heat Map PDF](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2969). Version 9.3 link: [QA Heat Map](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2765)\n\n[QVC Group Global Capability Inventory](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2971) is a running list of the most fine grained detail of capabilities. Use this to begin your research for a component of the model. This is not intended to be a comprehensive list of details, but rather a starting point to enable you to formulate ideas and questions for the business partners who are engaged in that capability's delivery to our customers. Version 9.3 link: [Capability Inventory](https://sharepoint.qvcdev.qvc.net/Teams/EAC/_layouts/15/DocIdRedir.aspx?ID=CMUC2J22NPSV-2035853923-2770)",
+      "format": "markdown"
+    },
+    "page_width": "full-width"
+  }
+}

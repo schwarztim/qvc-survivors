@@ -1,0 +1,15 @@
+#!/bin/bash
+DIR="$(cd "$(dirname "$0")/../Java" && pwd)"
+JAVA_HOME="$(/usr/libexec/java_home -v 21 2>/dev/null || /usr/libexec/java_home 2>/dev/null)"
+JAVAFX_PATH="$DIR"
+
+exec "$JAVA_HOME/bin/java" \
+    --module-path "$JAVAFX_PATH/javafx.base.jar:$JAVAFX_PATH/javafx.controls.jar:$JAVAFX_PATH/javafx.graphics.jar:$JAVAFX_PATH/javafx.media.jar:$JAVAFX_PATH/javafx.fxml.jar:$JAVAFX_PATH/javafx.web.jar:$JAVAFX_PATH/javafx.swing.jar" \
+    --add-modules javafx.controls,javafx.graphics,javafx.media,javafx.fxml \
+    -Djava.library.path="$JAVAFX_PATH" \
+    -Djpackage.app-version=2.3.0 \
+    -Dfile.encoding=UTF-8 \
+    -Dapple.awt.application.name="QVC Survivors" \
+    -Xdock:name="QVC Survivors" \
+    -cp "$DIR/QVCSurvivors-2.3.0-mac.jar" \
+    com.qvc.survivors.Launcher

@@ -1,0 +1,246 @@
+{
+  "metadata": {
+    "id": "478150657",
+    "title": "Q US Badges for Deals and Pricing Codes",
+    "type": "page",
+    "created": "",
+    "updated": "",
+    "url": "https://qurate.atlassian.net/wiki/spaces/DUGBP/pages/478150657",
+    "space": {
+      "key": "DUGBP",
+      "name": "Digital UX Guidelines and Best Practices"
+    },
+    "version": 27,
+    "attachments": [
+      {
+        "id": "att1092681771",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20260121-180343.png",
+        "media_type": "image/png",
+        "file_size": 3574,
+        "download_url": "/download/attachments/478150657/image-20260121-180343.png?version=1&modificationDate=1769018625654&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att1092026447",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20260121-180144.png",
+        "media_type": "image/png",
+        "file_size": 3574,
+        "download_url": "/download/attachments/478150657/image-20260121-180144.png?version=1&modificationDate=1769018506084&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att1071513601",
+        "type": "attachment",
+        "status": "current",
+        "title": "offerOfTheWeekBadge.png",
+        "media_type": "image/png",
+        "file_size": 1661,
+        "download_url": "/download/attachments/478150657/offerOfTheWeekBadge.png?version=1&modificationDate=1768505967679&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att1019052038",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20260107-144440.png",
+        "media_type": "image/png",
+        "file_size": 3799,
+        "download_url": "/download/attachments/478150657/image-20260107-144440.png?version=1&modificationDate=1767797082202&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att1018069079",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20260107-140835.png",
+        "media_type": "image/png",
+        "file_size": 4177,
+        "download_url": "/download/attachments/478150657/image-20260107-140835.png?version=1&modificationDate=1767794917378&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att665747747",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250505-150824.png",
+        "media_type": "image/png",
+        "file_size": 3981,
+        "download_url": "/download/attachments/478150657/image-20250505-150824.png?version=1&modificationDate=1746457706586&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att665649395",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250505-143209.png",
+        "media_type": "image/png",
+        "file_size": 2818,
+        "download_url": "/download/attachments/478150657/image-20250505-143209.png?version=1&modificationDate=1746455531992&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att607650006",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250221-152115.png",
+        "media_type": "image/png",
+        "file_size": 4700,
+        "download_url": "/download/attachments/478150657/image-20250221-152115.png?version=1&modificationDate=1740151278385&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att607649999",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250221-152058.png",
+        "media_type": "image/png",
+        "file_size": 1241,
+        "download_url": "/download/attachments/478150657/image-20250221-152058.png?version=1&modificationDate=1740151260808&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att595788254",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250207-193835.png",
+        "media_type": "image/png",
+        "file_size": 2606,
+        "download_url": "/download/attachments/478150657/image-20250207-193835.png?version=1&modificationDate=1738957118138&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att585466411",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250128-145439.png",
+        "media_type": "image/png",
+        "file_size": 3252,
+        "download_url": "/download/attachments/478150657/image-20250128-145439.png?version=1&modificationDate=1738076081745&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att585499048",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250128-145206.png",
+        "media_type": "image/png",
+        "file_size": 5230,
+        "download_url": "/download/attachments/478150657/image-20250128-145206.png?version=1&modificationDate=1738075928164&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att585466262",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250128-144950.png",
+        "media_type": "image/png",
+        "file_size": 2915,
+        "download_url": "/download/attachments/478150657/image-20250128-144950.png?version=1&modificationDate=1738075792700&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att558142514",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250110-152649.png",
+        "media_type": "image/png",
+        "file_size": 4024,
+        "download_url": "/download/attachments/478150657/image-20250110-152649.png?version=1&modificationDate=1736522811220&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att557747628",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250109-193642.png",
+        "media_type": "image/png",
+        "file_size": 5230,
+        "download_url": "/download/attachments/478150657/image-20250109-193642.png?version=1&modificationDate=1736451404812&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att557746763",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250109-190338.png",
+        "media_type": "image/png",
+        "file_size": 5817,
+        "download_url": "/download/attachments/478150657/image-20250109-190338.png?version=1&modificationDate=1736449420097&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att557713688",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250109-185751.png",
+        "media_type": "image/png",
+        "file_size": 5457,
+        "download_url": "/download/attachments/478150657/image-20250109-185751.png?version=1&modificationDate=1736449073262&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att557648327",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250109-185453.png",
+        "media_type": "image/png",
+        "file_size": 5714,
+        "download_url": "/download/attachments/478150657/image-20250109-185453.png?version=1&modificationDate=1736448895175&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att557746407",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250109-184329.png",
+        "media_type": "image/png",
+        "file_size": 2272,
+        "download_url": "/download/attachments/478150657/image-20250109-184329.png?version=1&modificationDate=1736448211420&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att557713344",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250109-184320.png",
+        "media_type": "image/png",
+        "file_size": 2272,
+        "download_url": "/download/attachments/478150657/image-20250109-184320.png?version=1&modificationDate=1736448201885&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att557680663",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20250109-184130.png",
+        "media_type": "image/png",
+        "file_size": 2432,
+        "download_url": "/download/attachments/478150657/image-20250109-184130.png?version=1&modificationDate=1736448092329&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att482249892",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20240918-142247.png",
+        "media_type": "image/png",
+        "file_size": 68496,
+        "download_url": "/download/attachments/478150657/image-20240918-142247.png?version=1&modificationDate=1726669369046&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att482185116",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20240918-142139.png",
+        "media_type": "image/png",
+        "file_size": 90892,
+        "download_url": "/download/attachments/478150657/image-20240918-142139.png?version=1&modificationDate=1726669303030&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att482151176",
+        "type": "attachment",
+        "status": "current",
+        "title": "Frame 6.png",
+        "media_type": "image/png",
+        "file_size": 225129,
+        "download_url": "/download/attachments/478150657/Frame%206.png?version=1&modificationDate=1726668573727&cacheVersion=1&api=v2"
+      },
+      {
+        "id": "att482151118",
+        "type": "attachment",
+        "status": "current",
+        "title": "image-20240918-135236.png",
+        "media_type": "image/png",
+        "file_size": 703988,
+        "download_url": "/download/attachments/478150657/image-20240918-135236.png?version=1&modificationDate=1726667561492&cacheVersion=1&api=v2"
+      }
+    ],
+    "content": {
+      "value": "[For Qi Market Badging](https://qurate.atlassian.net/wiki/x/AQDdIg)\n\n**Summary:** Overview of the Purpose, Design and Use of Badges for Promotions and Pricing Offers.\n\n**Table of contents:**\n\n16falsenonelisttrue\n\n**To find the most up-to-date design specs and components** we use for our QVC pages, reference the [LIVE Design System in Figma](https://www.figma.com/design/7ATYi3dUVI9jokSSNR84EA/LIVE-Design-System?node-id=39-180&m=dev&focus-id=51-298)\n\n---\n\n### Overview\n\nBadges serve as visual markers that help customers easily identify products associated with specific deals, pricing codes, and events. The aim is to enable quick recognition and streamline the shopping experience.\n\n| **Old Image Badges** | **New HTML Badges** |\n| --- | --- |\n| badge_tsv.png | image2024-9-9_10-42-16.png?version=1&modificationDate=1725892937586&cacheVersion=1&api=v2 |\n\n---\n\n### UX Best Practices\n\n#### Baymard Institute: Guideline #447\n\nDuring testing, the Baymard Institute identified two crucial details for optimizing the use of labels and badges to highlight product differences:\n\n1. **Use labels and badges sparingly**.\n2. **Ensure labels and badges are meaningful and easy to see and understand**.\n\n**Key Insights:**\n\n* **Avoid Overuse:** If most items in product lists or search results have the same labels, the purchasing attribute is not unique. This can slow down the scanning process rather than aid it. Essentially, when everything is vying for attention, nothing stands out. The goal is to highlight products with unique features or those tailored to specific user needs — the ones actively sought after by particular customers.\n* **Clarity of Labels:** If users don’t grasp what a label indicating a unique purchasing attribute means, they won’t confidently include or exclude products based on those labels.\n\n#### Do:\n\n1. **Keep Badge Promotions Clear and Concise:** Avoid clutter by ensuring promotions are straightforward.\n2. **Provide Detailed Explanations in Badge Popups:** Ensure users can access comprehensive information easily.\n3. **Use Consistent Badge Designs:** Maintain design consistency across product tiles to avoid confusion.\n\n#### Don’t:\n\n* **Avoid Redundant Badges:** Don’t add an image badge to the main product image if it already displays the same HTML badge.\n* **Refrain from Overloading Promotions:** Don’t show the same badge in carousels or pages filtered by promotion type (e.g., clearance badges on the Clearance PLP should be avoided).\n* **Minimize Badge Copy Length:** Badge copy should be concise due to limited space.\n* **Stick to Standard Designs:** Don’t create new badge layouts or designs to maintain consistency.\n\nBy following these guidelines, QVC can ensure that badges and labels effectively highlight product differentiators, enhance user experience, and improve the overall shopping experience.\n\n| **Do:** | **Don’t:** Add an Image Badge to 001 |\n| --- | --- |\n| image-20240918-142247.png | image-20240918-142139.png |\n\n| **Do:** Group similar products for promotion and label the content with the offer title. | **Don’t:** Display Badges that repeat on every product |\n| --- | --- |\n| image-20240913-191033.png | image-20240913-190950.png |\n\n---\n\n### Visual Hierarchy\n\n#### Today's Special Value (TSV) Badges\n\n**The TSV is the ONLY Badge that can have the solid red background.**\n\n* **Design:** The TSV badge features a solid red background to make it stand out from all other badges.\n* **Placement:** Prominently displayed to signify the best deal of the day.\n* **Purpose:** Captures immediate attention, highlighting the importance of the badge.\n\n#### Sales Badges\n\n* **Examples:** Sale Price, Clearance Price\n* **Design:** Red text on a White background.\n* **Placement:** Less prominent than the TSV badge due to their frequency and volume, designed to prevent visual clutter while still guiding customers to deals.\n\n#### General Promotion Badges\n\n* **Examples:** Big Deal, Beauty IQ Steal\n* **Design:** Midnight blue text on a white background.\n* **Purpose:** Ensures clarity and consistency for less critical promotions, maintaining a cohesive look and feel without cluttering the visual hierarchy.\n\n#### Major Events\n\n* **Examples:** Black Friday, Cyber Monday\n* **Design:** Custom designs may be created for major events like Black Friday or Cyber Monday, but **must be discussed** with the UX Product Design team first to ensure consistency with the QVC Design System.\n* **Purpose:** Ensures clarity and consistency, making it easy for users to differentiate between various promotions.\n\n---\n\n### How Badges are Displayed\n\n* **Carousels and PLP Cards:** Badges are displayed directly below the image and above the pricing information (when available). Note: PLP cards are part of an upcoming update (*Coming Soon*).\n* **Product Detail Pages (PDP):** On PDPs, badges appear at the top of the price block, maintaining the same visual order as in other locations.\n\n![Frame 6.png](https://qurate.atlassian.net/wiki/download/attachments/478150657/Frame%206.png?version=1&modificationDate=1726668573727&cacheVersion=1&api=v2)\n\n---\n\n**PDP Badge Interaction**\n\n**Only on the Product Display Page**  \nIf a customer clicks or taps the Badge and popup should display a short explanation of the Promotion.\n\n![Screenshot 2024-09-12 at 2.24.56PM.png](https://qurate.atlassian.net/wiki/download/attachments/478150657/Screenshot%202024-09-12%20at%202.24.56%E2%80%AFPM.png)\n\n---\n\n### Research\n\n**PXP Deal Labels Max Diff Study**\n\nObjective: **to get customer feedback on which label they think offers the most value or is the most important to them when making a purchase.**\n\n* **Free Standard S&H** and **Today’s Special Value** were left out of the final list of deal labels tested. This is due to the overwhelming preference found in the first round of testing that included all 30 deal labels. **Customers found these two terms 8x+ more appealing than any other deal label presented.** This is not surprising as customers were most aware of these two terms on an unaided and aided basis. \n* The original study intended to test 30 deal labels. Preliminary results suggested that testing 28 deal labels would yield more actionable results. 10 of the 28 labels were found to be more appealing than the others tested.\n* **One Time Only Price** was found to be 5x+ more appealing than any other deal label presented. \n* If deciding to display two deal labels at the same time, One Time Only Price and Today Only Price would appeal to the most customers (36.7%)\n* **One Time Only Price** on its own reaches 21.4% of customers.\n* The addition of Today Only Price would bump that reach up to 36.7%\\*\n\n![Screenshot 2024-09-16 at 2.50.04PM.png](https://qurate.atlassian.net/wiki/download/attachments/478150657/Screenshot%202024-09-16%20at%202.50.04%E2%80%AFPM.png)\n\n---\n\n### Accessibility Guidelines\n\nBadges accessibility guidelinesImplicit Accessibility Requirements\n\n---\n\n### Currently Displayed Badges\n\n#### **Text Display**\n\n| **Web** |\n| --- |\n| csstext-align: center; font-family: \"TT Norms Pro Medium\", Arial, Helvetica, sans-serif; font-size: 12px; font-style: normal; font-weight: 500; line-height: 12px; text-transform: uppercase; |\n\n| **iOS** |\n| --- |\n| swiftFont.custom(\"TT Norms Pro Medium\", size: 12) .weight(.medium) .multilineTextAlignment(.center) |\n\n| **Android** |\n| --- |\n| xmlFont family: TT Norms Pro Medium Text Size: 12sp Line height: 12sp Text Alignment: center\\_horizontal|top |\n\n#### **Badge Colors**\n\nnotebb7a9383-36a5-4b21-82c7-33de69ac1d7d\n\nDEV NOTE: For the badge list, in the Java DTO it does convert some price codes into class names, noted below as *“className”*, which is why some are an actual name rather than a price code.\n\nDEV NOTE: For the badge list, in the Java DTO it does convert some price codes into class names, noted below as *“className”*, which is why some are an actual name rather than a price code.\n\n|  | Badge | Price Code/Class | Border Color | Text Color | Background Color |\n| --- | --- | --- | --- | --- | --- |\n| 1 | image2024-9-9_10-42-16.png?version=1&modificationDate=1725892937586&cacheVersion=1&api=v2 | TSV, TSA, TPS, TPA, TES, TEA | image-20240913-133128.png  #7E8592 | image-20240913-132845.png  #FFFFFF | image-20240913-131746.png  #DA291C |\n| 2 | image-20250109-185453.png | tsvprev *“prodBadgeTsvprev”* | image-20240913-133128.png  #7E8592 | image-20240913-132845.png  #FFFFFF | image-20240913-131746.png  #DA291C |\n| 3 | image-20250109-185751.png | tsvpresale *“prodBadgeTsvpresale”* | image-20240913-133128.png  #7E8592 | image-20240913-132845.png  #FFFFFF | image-20240913-131746.png  #DA291C |\n| 4 | image-20250109-190338.png | tsvpostsale *“prodBadgeTsvpostsale”* | image-20240913-133128.png  #7E8592 | image-20240913-132845.png  #FFFFFF | image-20240913-131746.png  #DA291C |\n| 5 | image2024-9-9_13-28-3.png?version=1&modificationDate=1725902884518&cacheVersion=1&api=v2 | SPT, SFP, SPJ, SPR | image-20240913-133128.png  #7E8592 | image-20240913-131746.png  #DA291C | image-20240913-132845.png  #FFFFFF |\n| 6 | image2024-9-9_14-6-59.png?version=1&modificationDate=1725905220340&cacheVersion=1&api=v2 | CP1, CP2, CP3 | image-20240913-133128.png  #7E8592 | image-20240913-131746.png  #DA291C | image-20240913-132845.png  #FFFFFF |\n| 7 | image2024-9-11_8-47-51.png?version=1&modificationDate=1726058872537&cacheVersion=1&api=v2 | CS | image-20240913-133128.png  #7E8592 | image-20240913-131746.png  #DA291C | image-20240913-132845.png  #FFFFFF |\n| 8 | image2024-9-11_8-53-16.png?version=1&modificationDate=1726059197500&cacheVersion=1&api=v2 | LTS | image-20240913-133128.png  #7E8592 | image-20240913-131746.png  #DA291C | image-20240913-132845.png  #FFFFFF |\n| 9 | image-20240913-134140.png | CPQ | image-20240913-133128.png  #7E8592 | image-20240913-131746.png  #DA291C | image-20240913-132845.png  #FFFFFF |\n| 10 | image-20250128-145439.png | SPT | image-20240913-133128.png  #7E8592 | image-20240913-131746.png  #DA291C | image-20240913-132845.png  #FFFFFF |\n| 11 | image-20250505-143209.png |  | image-20240913-133128.png  #7E8592 | image-20240913-131746.png  #DA291C | image-20240913-132845.png  #FFFFFF |\n| 12 | offerOfTheWeekBadge.png | OFF | image-20240913-133128.png  #7E8592 | image-20240913-131746.png  #DA291C | image-20240913-132845.png  #FFFFFF |\n| 13 | image2024-9-9_13-13-21.png?version=1&modificationDate=1725902003114&cacheVersion=1&api=v2 | BIG, BIA | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 14 | image2024-9-10_16-22-40.png?version=1&modificationDate=1725999762469&cacheVersion=1&api=v2 | AIP | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 15 | image2024-9-11_8-32-44.png?version=1&modificationDate=1726057965365&cacheVersion=1&api=v2 | BSA, BIS | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 16 | image-20250128-144950.png | TBB | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 17 | image-20240917-134534.png | AOP | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 18 | image-20240917-141158.png | EVT | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 19 | image-20240917-141755.png | OTO | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 20 | image-20240917-143059.png | GWP | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 21 | image-20250109-184130.png | soldout “prodBadgeSoldout” | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 22 | image-20250109-184329.png | waitlist “prodBadgeWaitlist” | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 23 | image-20250110-152649.png | *cleanbeauty* | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 24 | image-20250128-145206.png | LPS | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 25 | image-20250207-193835.png | DDP | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 26 | image-20250505-150824.png | IP | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 27 | image-20260121-180343.png | WSV | image-20240913-133128.png  #7E8592 | image-20240913-130440.png  #28334A | image-20240913-132845.png  #FFFFFF |\n| 28 | image-20250221-152115.png | SPB | image-20240913-133128.png  #7E85922 | image-20250221-152058.png  #F1C81E | image-20240913-130440.png  #28334A |\n\n#### Existing System Pricing Codes and Promotions\n\nPlease be aware that some pricing codes in the QVC system may not be currently active or associated with a HTML Badge. Below, you will find a detailed list of all known pricing codes, accompanied by relevant notes and their current status as documented in the [Tableau TPS Product Information](https://tableau-colo.qrg.one/#/views/TPSProductInformation/PriceReasonCodes?:iid=1).\n\n|  | **Price Code** | **Promotion** | **Notes** | **TPS?** |\n| --- | --- | --- | --- | --- |\n| 1 | AIP | As-Is-Price | Max-Diff: #7 | ✅ |\n| 2 | ANV | Anniversary Price |  |  |\n| 3 | AOP | Q50 Pick |  | ✅ |\n| 4 | ARP | Advance Reservations Price |  |  |\n| 5 | AS | All-Star Price |  |  |\n| 6 | AWR | Awareness Price |  |  |\n| 7 | BAR | 24/7 Deal |  |  |\n| 8 | BB | Beauty Bash Price |  |  |\n| 9 | BBP | Baseball Bonus Price |  |  |\n| 10 | BD | Birthday Price |  |  |\n| 11 | BHG | Black Hills Gold Rush |  |  |\n| 12 | BHGR | Black Hills Gold Rush |  |  |\n| 13 | BHR | Black Hills Gold Rush |  |  |\n| 14 | BIA | Big Deal | July 2021, It’s more beneficial to topline conv to only show TSV & TBB. Oct 2021, re-tested with Holiday Big Deal in place and topline was neutral with mixed segment results.  Max-Diff: #8 | ✅ |\n| 15 | BIC | Big Deal |  |  |\n| 16 | BIG | Big Deal |  | ✅ |\n| 17 | BIS | Beaty iQ Steal |  | ✅ |\n| 18 | BMP | Blue Moon Price |  |  |\n| 19 | BP | Birthday Week Price |  |  |\n| 20 | BPC | Bonus Price Code |  |  |\n| 21 | BSA | Beauty iQ Steal |  |  |\n| 22 | BSP | Big Bonanza Silver Sale Price |  |  |\n| 23 | BWB | Beauty with Benefits Price |  |  |\n| 24 | CAT | Catalog Price |  |  |\n| 25 | CCP | Coat Clearance Price |  |  |\n| 26 | CDP | Columbus Day Surprise Price |  |  |\n| 27 | CF | Capodimonte Festival |  |  |\n| 28 | CFP | Crystal Fantasy Price |  |  |\n| 29 | CFV | Checkered Flag Values |  |  |\n| 30 | CGR | California Gold Rush Sale |  |  |\n| 31 | CIJ | Christmas in July |  |  |\n| 32 | CL | Clearance |  |  |\n| 33 | CLS | Clearance |  |  |\n| 34 | CMP | Catalog Members Price |  |  |\n| 35 | CNT | Countdown to Christmas |  |  |\n| 36 | CO | Collector's Outlet |  |  |\n| 37 | COV | Cover Price |  |  |\n| 38 | CP | Clearance Price | Max-Diff: #3 | ✅ |\n| 39 | CP1 | Clearance Price | Max-Diff: #3 | ✅ |\n| 40 | CP2 | Clearance Price | Max-Diff: #3 | ✅ |\n| 41 | CP3 | Clearance Price | Max-Diff: #3 | ✅ |\n| 42 | CPD | Clearance Price | Max-Diff: #3 |  |\n| 43 | CPL | Primetime Special Price |  | ✅ |\n| 44 | CPQ | Final Sale Price |  | ✅ |\n| 45 | CPS | Clearance Price |  |  |\n| 46 | CS | Clearance Sale Price | Max-Diff: #4 | ✅ |\n| 47 | CSC | Clearance Sale Price | Max-Diff: #4 |  |\n| 48 | CSJ | Clearance Sale Price | Max-Diff: #4 |  |\n| 49 | CSP | Capodimonte Sale Price |  |  |\n| 50 | CSS | Creede Silver Sale Price |  |  |\n| 51 | CWP | Craftsman Workshop Price |  |  |\n| 52 | DAP | Diamonique 20th Anniversary |  |  |\n| 53 | DBU | Debut |  |  |\n| 54 | DD | Double Day Price |  |  |\n| 55 | DH | Doll House |  |  |\n| 56 | DW | Diamonique Week |  |  |\n| 57 | DWP | Doll Week Price |  |  |\n| 58 | EB | Early Bird Price |  |  |\n| 59 | ECL | Easter Basket Clearance |  |  |\n| 60 | ED | Edie Testing |  |  |\n| 61 | EDY | 20th Edition Price |  |  |\n| 62 | ESV | Employee's Special Value |  |  |\n| 63 | EVL | Final Sale Price |  |  |\n| 64 | EVT | Event Price |  | ✅ |\n| 65 | F13 | Friday the 13th Price |  |  |\n| 66 | FCL | Fashion Clearance Price |  |  |\n| 67 | FD | Founder's Day Price |  |  |\n| 68 | FDY | Fashion Day Price |  |  |\n| 69 | FF | Fashion Today |  |  |\n| 70 | FFR | Fashion Fireworks Price |  |  |\n| 71 | FHC | Fingerhut |  |  |\n| 72 | FMD | Sale Price |  |  |\n| 73 | FO | Fashion Outlet |  |  |\n| 74 | FOS | Fashion Outlet |  |  |\n| 75 | FP | Featured Price |  |  |\n| 76 | FPC | Featured Price |  |  |\n| 77 | FR | Fashion Friday |  |  |\n| 78 | FRE | No Charge |  |  |\n| 79 | FSF | Fasching Festival |  |  |\n| 80 | FTN | Fashion Tonight |  |  |\n| 81 | FTS | Final TSV Presentation |  |  |\n| 82 | FW | Fashion Week |  |  |\n| 83 | FWA | Fashion Week Anniversary |  |  |\n| 84 | GG | Gem Gallery Price |  |  |\n| 85 | GO | Grand Opening |  |  |\n| 86 | GS | Gold Week |  |  |\n| 87 | GTK | Get to Know Us Price |  |  |\n| 88 | GW | Gem Week |  |  |\n| 89 | GWP | Gift With Purchase |  | ✅ |\n| 90 | HSP | Holiday Surprise Price |  |  |\n| 91 | HSS | Holiday Special Price |  |  |\n| 92 | ICL | iQVC Clearance |  |  |\n| 93 | ID | Italian Day - Italian Fes |  |  |\n| 94 | INS | InsideQ Member Price |  |  |\n| 95 | IP | Introductory Price |  |  |\n| 96 | IPP |  |  |  |\n| 97 | IPPP |  |  |  |\n| 98 | IPR | Introductory Price |  |  |\n| 99 | IQ | iQVC on Q2 |  |  |\n| 100 | JO | Jewelry Outlet |  |  |\n| 101 | KGR | Klondike Gold Rush Sale P |  |  |\n| 102 | LC | Clearance Price |  |  |\n| 103 | LCH | Last Chance Price |  |  |\n| 104 | LH | Limited Quantity |  |  |\n| 105 | LO | Linens for Less |  |  |\n| 106 | LPR | Launch Price |  |  |\n| 107 | LPS | Lowest Price of the Season |  |  |\n| 108 | LTS | Lunchtime Special Price |  | ✅ |\n| 109 | LUC | Lucky Find Price |  |  |\n| 110 | MOM | Mother's Day Special Pric |  |  |\n| 111 | MPS | Marketplace Special |  |  |\n| 112 | MWM | Midway Mania |  |  |\n| 113 | N |  |  |  |\n| 114 | NAH | DB2 V10 Accept test |  |  |\n| 115 | NAK | NHK - NFM acct testing |  |  |\n| 116 | NC | New Clicks |  |  |\n| 117 | NFM | National Fitness Month |  |  |\n| 118 | NHK | NHK Int test |  |  |\n| 119 | NPM | National Photo Month Pric |  |  |\n| 120 | OBG | Oldies but Goodies |  |  |\n| 121 | OCP | Clearance Price |  |  |\n| 122 | ODM | One Day Monday |  |  |\n| 123 | ODP | One Day Only Price |  |  |\n| 124 | ODT | Limited Quantities |  |  |\n| 125 | OP | Overstock Price |  |  |\n| 126 | OQ | QVC Price |  |  |\n| 127 | OS | QVC Outlet Store Price |  |  |\n| 128 | OTJ | One Day Only Price | Max-Diff: #5 |  |\n| 129 | OTO | One Time Only Price | Max-Diff: *5x+ more appealing than any other Deal Label presented to the customer.*  | ✅ |\n| 130 | PAP | Private Access Price |  |  |\n| 131 | PB | Power Buy |  |  |\n| 132 | PBR | Price Break |  |  |\n| 133 | PD | Presidents' Day Price |  |  |\n| 134 | PPD | Pay Plan Today Only |  |  |\n| 135 | PR | Price Break |  |  |\n| 136 | PSC | Pre-Season Coat Price |  |  |\n| 137 | PSD | Product Search Discovery |  |  |\n| 138 | PSP | Pre-Season Price |  |  |\n| 139 | PWP | Purchase With Purchase |  |  |\n| 140 | QB | Q-Bird's Birthday |  |  |\n| 141 | QBB | Q-Bird's Birthday Price |  |  |\n| 142 | QBS | Q-Bird Special |  |  |\n| 143 | QCS | QVC Clearance Sale |  |  |\n| 144 | QCX | Web No Charge |  |  |\n| 145 | QDX | Q-Direct Free |  |  |\n| 146 | QHD | QVC HD Extra |  |  |\n| 147 | QP | QVC Plus Price |  |  |\n| 148 | RBF | Roll Back to 50's |  |  |\n| 149 | RES | Resolution Price |  |  |\n| 150 | RO | Ring Outlet |  |  |\n| 151 | RP | Refurbished Price |  |  |\n| 152 | RWB | Red, White and Blue Sale |  |  |\n| 153 | SB | Superbargain Price |  |  |\n| 154 | SEV | Special Event Price |  |  |\n| 155 | SFP | Sale Price |  | ✅ |\n| 156 | SGB | Susan's Birthday Price |  |  |\n| 157 | SHP | Special Holiday Price(Com |  |  |\n| 158 | SJO | Special Jewelry Offer |  |  |\n| 159 | SLP | Seriously Low Price |  |  |\n| 160 | SMD | Sale Price |  |  |\n| 161 | SOQ | Savings on Q Price |  |  |\n| 162 | SOS | Savings on Style |  |  |\n| 163 | SP | Special Price |  |  |\n| 164 | SPB | Black Friday Sale Price | Applied to price code SPB in AEM – Tested Positive as Black Friday Sale Price *\\*Has been getting renamed during the year (Cyber Deals, Cyber Sale Price, Lowest Price, Deal Drop)* |  |\n| 165 | SPC | Sale Price |  |  |\n| 166 | SPF | Spring Parade Price |  |  |\n| 167 | SPG | Spring Fling |  |  |\n| 168 | SPJ | Sale Price |  | ✅ |\n| 169 | SPP | Sneak Preview Price |  |  |\n| 170 | SPR | Sale Price |  | ✅ |\n| 171 | SPS | Super Saturday Live Price |  |  |\n| 172 | SPT | Sale Spotlight | Only Displayed on PLP. This should be changed to display Sale Price like PDP. Negative test results, but may re-test with new name. Hiding in web with monetate right now. iOS Badge says “Sale Price” since it pulls price desc. | ✅ |\n| 173 | SS | Shamrock Surprise |  |  |\n| 174 | SSL | Shoes on Sale Price |  |  |\n| 175 | SSP | Holiday Weekend Deal |  | ✅ |\n| 176 | STC | Stand up to Cancer Price |  |  |\n| 177 | STY | Saint Yves Day Celebratione |  |  |\n| 178 | SV | Special Value |  |  |\n| 179 | TBA | Bonus Buy | Topline neutral to show along with TSV (incremental to organic search spend.) Currently not in use but is live if planning uses the price code again. |  |\n| 180 | TBB | Bonus Buy |  |  |\n| 181 | TEA | Today's Special Value |  |  |\n| 182 | TES | Today's Special Value |  |  |\n| 183 | TFV | Today's Fashion Value |  |  |\n| 184 | THO | 1000th Show Price |  |  |\n| 185 | TMD | Third Markdown |  |  |\n| 186 | TOP | Today Only Price | Max-Diff: #2 | ✅ |\n| 187 | TPA | Today's Special Value |  |  |\n| 188 | TPS | Today's Special Value |  |  |\n| 189 | TQV | QVC Extra Value |  |  |\n| 190 | TRY | Try Me Price |  |  |\n| 191 | TSA | Today's Special Value |  | ✅ |\n| 192 | TSE | Today's Special Edition |  |  |\n| 193 | TSP | Time Savings Price |  |  |\n| 194 | TST | Test For Pricing |  |  |\n| 195 | TSU | TSV Upsell |  |  |\n| 196 | TSV | Today's Special Value |  | ✅ |\n| 197 | TXA | TSV Extra |  |  |\n| 198 | TXV | TSV Extra |  |  |\n| 199 | VIC | Victory |  |  |\n| 200 | VOD | Value of the Day |  |  |\n| 201 | VOM | Value of the Month |  |  |\n| 202 | WBV | Weekend Bonus Value |  |  |\n| 203 | WDV | Winning Driver Value Price |  |  |\n| 204 | WEV | Weekly Bonus Value |  |  |\n| 205 | WK1 | KELLER TEST |  |  |\n| 206 | WMP | Watch Month Price |  |  |\n| 207 | WS | World Series Price |  |  |\n| 208 | WSL | While Supplies Last |  | ✅ |\n| 209 | WSV | Online Special Deal |  |  |\n| 210 | WV | Weekly Value |  |  |\n| 211 | X1 | test |  |  |\n| 212 | XTR | Extreme Price |  |  |\n| 213 | XX |  |  | ✅ |\n| 214 | Y |  |  |  |\n| 215 | YDS | Yard Sale |  |  |\n| 216 | YEC | Year End Clearance |  |  |\n| 217 | YS | Yard Sale |  |  |\n| 218 | YY | Special Promotion |  |  |\n| 219 | ZA | kast za |  |  |\n| 220 | ZMD | Fourth Mark Down |  |  |\n| 221 | ZT | Test Code |  |  |\n| 222 | ZUL | Zulilly |  | ✅ |\n| 223 | ZV | Test NFM |  |  |\n| 224 | ZZ | ZZkast |  |  |\n\n---\n\n### New Badge Creation Process\n\n* **Creating New Badges:** If a specific badge or pricing code is not listed, create one using the UX Design Guidelines for Badge Visual Hierarchy.\n* **Consultation:** Contact the UX Product Design team for any questions or clarifications before implementation to ensure alignment with product standards and compliance.\n\n**Sources:**\n\n* Baymard Institute Consider Using Labels and Badges to Selectively Highlight Unique Purchasing Attributes in List Items #447: [Link](https://baymard.com/premium/guideline-collections/vnxizq/447?summaryPermalink=vnxizq&guidelineCitationNumber=447)\n* PXP Deal Labels Max Diff Study: [Link](https://qvc.sharepoint.com/:p:/r/sites/GRP-QurateResearchLibrary/_layouts/15/Doc.aspx?sourcedoc=%7B2EF9FE86-EE42-452A-BB4B-D48F23BA21B6%7D&file=PXP%20Deal%20Labels%20Report%20-%20January%202023.pptx&action=edit&mobileredirect=true)\n* W3 Accessibility Guidelines: [Link](https://www.w3.org/WAI/standards-guidelines/wcag/)\n* Tableau TPS Product Information: System you can look for products that are associated with LIVE Price Codes: [Link](https://tableau-colo.qrg.one/#/views/TPSProductInformation/PriceReasonCodes?:iid=1)",
+      "format": "markdown"
+    }
+  }
+}
