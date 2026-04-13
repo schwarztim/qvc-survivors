@@ -43,7 +43,7 @@ public class Player extends Entity {
       this.movementComponent = new MovementComponent(35.0 + this.getMetaSpeedBonus(metaProgression));
       this.level = 1;
       this.experience = 0.0;
-      this.experienceThreshold = 10.0;
+      this.experienceThreshold = 5.0;
       this.money = 0;
       this.customersSatisfied = 0;
       this.survivalTime = 0.0;
@@ -121,7 +121,7 @@ public class Player extends Entity {
    }
 
    private double calculateNextThreshold() {
-      return 10 + (this.level - 1) * 15 + Math.pow(this.level - 1, 1.5) * 5.0;
+      return 5 + (this.level - 1) * 8 + Math.pow(this.level - 1, 1.3) * 3.0;
    }
 
    public void takeDamage(double damage) {

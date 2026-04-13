@@ -66,7 +66,6 @@ public class CollisionManager {
       for (Enemy enemy : enemies) {
          if (enemy.isActive() && player.collidesWith(enemy)) {
             player.takeDamage(enemy.getDamageComponent().getDamage());
-            enemy.setActive(false);
             if (player.isActive()) {
                hurtSound.run();
             }

@@ -44,6 +44,16 @@ public abstract class Enemy extends Entity {
       }
    }
 
+   public void applyKnockback(double fromX, double fromY, double force) {
+      double dx = this.x - fromX;
+      double dy = this.y - fromY;
+      double dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist > 0) {
+         this.x += (dx / dist) * force;
+         this.y += (dy / dist) * force;
+      }
+   }
+
    public boolean isDamageFlashing() {
       return this.damageFlashTimer > 0.0;
    }

@@ -453,6 +453,7 @@ public class GameController {
                if (enemy.isActive() && sw.isEnemyInRadius(enemy)) {
                   double swDmg = sw.getDamage();
                   enemy.takeDamage(swDmg);
+                  enemy.applyKnockback(this.player.getX(), this.player.getY(), 1.5);
                   sw.markHit(enemy);
                   if (this.settings.isDamageNumbers()) {
                      this.damageNumbers.spawn(enemy.getX(), enemy.getY() - 0.5, swDmg, Color.WHITE);
@@ -616,6 +617,7 @@ public class GameController {
                   boolean isCritical = Math.random() < critChance;
                   if (isCritical) damage *= critMultiplier;
                   enemy.takeDamage(damage);
+                  enemy.applyKnockback(this.player.getX(), this.player.getY(), 1.5);
                   arc.markHit(enemy);
                   applyLifesteal(lifesteal, damage);
                   if (this.settings.isDamageNumbers()) {
@@ -642,6 +644,7 @@ public class GameController {
                }
 
                enemy.takeDamage(damage);
+               enemy.applyKnockback(this.player.getX(), this.player.getY(), 1.5);
                applyLifesteal(lifesteal, damage);
                if (this.settings.isDamageNumbers()) {
                   this.damageNumbers.spawn(enemy.getX(), enemy.getY() - 0.5, damage,
@@ -675,6 +678,7 @@ public class GameController {
                      boolean isCrit = Math.random() < critChance;
                      if (isCrit) damage *= critMultiplier;
                      enemy.takeDamage(damage);
+                     enemy.applyKnockback(this.player.getX(), this.player.getY(), 1.5);
                      drone.resetAttackTimer();
                      applyLifesteal(lifesteal, damage);
                      if (this.settings.isDamageNumbers()) {
@@ -959,6 +963,7 @@ public class GameController {
             for (Enemy enemy : this.enemies) {
                if (enemy.isActive()) {
                   enemy.takeDamage(10);
+                  enemy.applyKnockback(this.player.getX(), this.player.getY(), 1.5);
                   this.gameView.getParticleSystem().createImpact(enemy.getX(), enemy.getY(), Color.RED);
                }
             }
