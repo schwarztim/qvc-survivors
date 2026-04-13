@@ -89,6 +89,7 @@ public class GameController {
    private final SFXManager sfxManager;
    private final MetaProgressionManager metaProgressionManager;
    private final SettingsManager settingsManager;
+   private final com.qvc.survivors.service.UpdateChecker updateChecker;
    private GameSettings settings;
    private Player player;
    private List<Enemy> enemies;
@@ -156,6 +157,8 @@ public class GameController {
       this.musicManager = new MusicManager();
       this.sfxManager = new SFXManager();
       this.metaProgressionManager = new MetaProgressionManager();
+      this.updateChecker = new com.qvc.survivors.service.UpdateChecker();
+      this.updateChecker.checkAsync();
       this.preloaderAnimationTime = 0.0;
       this.isFirstGame = true;
       this.selectedMetaUpgrade = 0;
@@ -1526,6 +1529,13 @@ public class GameController {
       if (this.gameState == GameState.PRELOADER) {
          this.camera.setEnabled(false);
          this.preloaderView.render(this.preloaderAnimationTime);
+         if (this.updateChecker.isChecked() && this.updateChecker.isUpdateAvailable()) {
+            String msg = "Update available: v" + this.updateChecker.getLatestVersion()
+               + "  —  github.com/schwarztim/qvc-survivors/releases";
+            double msgX = this.gameView.getWidth() / 2.0 - msg.length() * 4.5;
+            this.gameView.drawText(msg, msgX, this.gameView.getHeight() - 14,
+               javafx.scene.paint.Color.rgb(200, 200, 80, 0.85), 13);
+         }
          this.camera.setEnabled(true);
       } else if (this.gameState == GameState.PLAYING || this.gameState == GameState.LEVEL_UP) {
          this.renderEntities();
